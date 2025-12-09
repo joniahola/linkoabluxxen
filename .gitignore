@@ -1,0 +1,9 @@
+.vscode
+.git
+.DS_Store
+package-lock.json
+yarn.lock
+node_modules    
+bga-framework.d.ts
+* *
+sync-helpers.sh
