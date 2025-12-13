@@ -2,7 +2,7 @@
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * LinkoAbluxxen implementation : © <Your name here> <Your email address here>
+ * LinkoAbluxxen implementation : © Joni Ahola aholanjoni@gmail.com
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -25,8 +25,6 @@ class Game extends \Bga\GameFramework\Table
 {
     public static array $CARD_TYPES;
 
-    public PlayerCounter $playerEnergy;
-
     /**
      * Your global variables labels:
      *
@@ -41,55 +39,52 @@ class Game extends \Bga\GameFramework\Table
         parent::__construct();
         $this->initGameStateLabels([]); // mandatory, even if the array is empty
 
-        $this->playerEnergy = $this->counterFactory->createPlayerCounter('energy');
-
         self::$CARD_TYPES = [
-            1 => [
+            '1' => [
                 "card_name" => clienttranslate('1s'), // ...
             ],
-            2 => [
+            '2' => [
                 "card_name" => clienttranslate('2s'), // ...
             ],
-            3 => [
+            '3' => [
                 "card_name" => clienttranslate('3s'), // ...
             ],
-            4 => [
+            '4' => [
                 "card_name" => clienttranslate('4s'), // ...
             ],
-            5 => [
+            '5' => [
                 "card_name" => clienttranslate('5s'), // ...
             ],
-            6 => [
+            '6' => [
                 "card_name" => clienttranslate('6s'), // ...
             ],
-            7 => [
+            '7' => [
                 "card_name" => clienttranslate('7s'), // ...
             ],
-            8 => [
+            '8' => [
                 "card_name" => clienttranslate('8s'), // ...
             ],
-            9 => [
+            '9' => [
                 "card_name" => clienttranslate('9s'), // ...
             ],
-            10 => [
+            '10' => [
                 "card_name" => clienttranslate('10s'), // ...
             ],
-            11 => [
+            '11' => [
                 "card_name" => clienttranslate('11s'), // ...
             ],
-            12 => [
+            '12' => [
                 "card_name" => clienttranslate('12s'), // ...
             ],
-            13 => [
+            '13' => [
                 "card_name" => clienttranslate('13s'), // ...
             ],
-            14 => [
+            'JOKER' => [
                 "card_name" => clienttranslate('Joker'), // ...
             ],
-            15 => [
+            'PAW' => [
                 "card_name" => clienttranslate('Paw'), // ...
             ]
-
         ];
 
         /* example of notification decorator.
@@ -188,7 +183,6 @@ class Game extends \Bga\GameFramework\Table
      */
     protected function setupNewGame($players, $options = [])
     {
-        $this->playerEnergy->initDb(array_keys($players), initialValue: 2);
 
         // Set the colors of the players with HTML color code. The default below is red/green/blue/orange/brown. The
         // number of colors defined here must correspond to the maximum number of players allowed for the gams.
