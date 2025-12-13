@@ -17,7 +17,7 @@ $gameinfos = [
     'publisher' => 'AMIGO',
 
     // Url of game publisher website
-    'publisher_website' => 'http://www.mypublishingcompany.com/',
+    'publisher_website' => 'https://www.amigo-spiele.de/',
 
     // Board Game Geek ID of the publisher
     'publisher_bgg_id' => 8,
