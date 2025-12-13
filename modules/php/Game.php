@@ -19,11 +19,13 @@ declare(strict_types=1);
 namespace Bga\Games\LinkoAbluxxen;
 
 use Bga\Games\LinkoAbluxxen\States\PlayerTurn;
-use Bga\GameFramework\Components\Counters\PlayerCounter;
+use Bga\GameFramework\Components\Deck;
 
 class Game extends \Bga\GameFramework\Table
 {
-    public static array $CARD_TYPES;
+    public array $card_types;
+
+    public Deck $cards;
 
     /**
      * Your global variables labels:
@@ -39,7 +41,9 @@ class Game extends \Bga\GameFramework\Table
         parent::__construct();
         $this->initGameStateLabels([]); // mandatory, even if the array is empty
 
-        self::$CARD_TYPES = [
+        $this->cards = $this->deckFactory->createDeck('card');
+
+        $this->card_types = [
             '1' => [
                 "card_name" => clienttranslate('1s'), // ...
             ],
@@ -170,9 +174,22 @@ class Game extends \Bga\GameFramework\Table
         $result["players"] = $this->getCollectionFromDb(
             "SELECT `player_id` `id`, `player_score` `score` FROM `player`"
         );
-        $this->playerEnergy->fillResult($result);
 
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
+
+        // Cards in player hand
+        $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
+
+        // Cards played on the table
+        $result['playertable'] = $this->cards->getCardsInLocation('playertable', $current_player_id);
+
+        // Cards on pool
+        $result['pool'] = $this->cards->getCardsInLocation('pool');
+
+        // Cards on discardpile
+        $result['discardpile'] = $this->cards->getCardsInLocation('discardpile');
+
+        $result['card_types'] = $this->card_types;
 
         return $result;
     }
@@ -183,7 +200,6 @@ class Game extends \Bga\GameFramework\Table
      */
     protected function setupNewGame($players, $options = [])
     {
-
         // Set the colors of the players with HTML color code. The default below is red/green/blue/orange/brown. The
         // number of colors defined here must correspond to the maximum number of players allowed for the gams.
         $gameinfos = $this->getGameinfos();

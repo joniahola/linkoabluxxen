@@ -25,7 +25,7 @@
 - deck
 - pool
 - hand
-- player table
-- discard pile
+- playertable
+- discardpile
 ### card_location_arg:
 - <player_id>
