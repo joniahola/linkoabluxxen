@@ -23,7 +23,7 @@ use Bga\GameFramework\Components\Deck;
 
 class Game extends \Bga\GameFramework\Table
 {
-    public array $card_types;
+    public static array $CARD_TYPES;
 
     public Deck $cards;
 
@@ -43,68 +43,50 @@ class Game extends \Bga\GameFramework\Table
 
         $this->cards = $this->deckFactory->createDeck('card');
 
-        $this->card_types = [
-            '1' => [
+        self::$CARD_TYPES = [
+            1 => [
                 "card_name" => clienttranslate('1s'), // ...
             ],
-            '2' => [
+            2 => [
                 "card_name" => clienttranslate('2s'), // ...
             ],
-            '3' => [
+            3 => [
                 "card_name" => clienttranslate('3s'), // ...
             ],
-            '4' => [
+            4 => [
                 "card_name" => clienttranslate('4s'), // ...
             ],
-            '5' => [
+            5 => [
                 "card_name" => clienttranslate('5s'), // ...
             ],
-            '6' => [
+            6 => [
                 "card_name" => clienttranslate('6s'), // ...
             ],
-            '7' => [
+            7 => [
                 "card_name" => clienttranslate('7s'), // ...
             ],
-            '8' => [
+            8 => [
                 "card_name" => clienttranslate('8s'), // ...
             ],
-            '9' => [
+            9 => [
                 "card_name" => clienttranslate('9s'), // ...
             ],
-            '10' => [
+            10 => [
                 "card_name" => clienttranslate('10s'), // ...
             ],
-            '11' => [
+            11 => [
                 "card_name" => clienttranslate('11s'), // ...
             ],
-            '12' => [
+            12 => [
                 "card_name" => clienttranslate('12s'), // ...
             ],
-            '13' => [
+            13 => [
                 "card_name" => clienttranslate('13s'), // ...
             ],
-            'JOKER' => [
+            14 => [
                 "card_name" => clienttranslate('Joker'), // ...
             ],
-            'PAW' => [
-                "card_name" => clienttranslate('Paw'), // ...
-            ]
         ];
-
-        /* example of notification decorator.
-        // automatically complete notification args when needed
-        $this->notify->addDecorator(function(string $message, array $args) {
-            if (isset($args['player_id']) && !isset($args['player_name']) && str_contains($message, '${player_name}')) {
-                $args['player_name'] = $this->getPlayerNameById($args['player_id']);
-            }
-        
-            if (isset($args['card_id']) && !isset($args['card_name']) && str_contains($message, '${card_name}')) {
-                $args['card_name'] = self::$CARD_TYPES[$args['card_id']]['card_name'];
-                $args['i18n'][] = ['card_name'];
-            }
-            
-            return $args;
-        });*/
     }
 
     /**
@@ -178,18 +160,15 @@ class Game extends \Bga\GameFramework\Table
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
 
         // Cards in player hand
+        
         $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
-
-        // Cards played on the table
         $result['playertable'] = $this->cards->getCardsInLocation('playertable', $current_player_id);
-
-        // Cards on pool
         $result['pool'] = $this->cards->getCardsInLocation('pool');
-
-        // Cards on discardpile
         $result['discardpile'] = $this->cards->getCardsInLocation('discardpile');
 
-        $result['card_types'] = $this->card_types;
+        $result['card_types'] = self::$CARD_TYPES;
+
+        $result['deck'] = $this->cards->getCardsInLocation('deck');
 
         return $result;
     }
@@ -242,10 +221,27 @@ class Game extends \Bga\GameFramework\Table
 
         // TODO: Setup the initial game situation here.
 
+        // Create cards
+        $cards = [];
+        foreach (self::$CARD_TYPES as $key => $card) {
+            // spade, heart, diamond, club
+            $counter = $key === 14 ? 5 : 8;
+            $cards[] = ['type' => $key, 'type_arg' => $key, 'nbr' => $counter];
+        }
+        $this->cards->createCards($cards, 'deck', 0);
+
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();
 
         return PlayerTurn::class;
+    }
+
+    public function debug_clearAllCards() {
+        $this->cards->deleteCardsInLocation('deck');
+        $this->cards->deleteCardsInLocation('hand');
+        $this->cards->deleteCardsInLocation('playertable');
+        $this->cards->deleteCardsInLocation('pool');
+        $this->cards->deleteCardsInLocation('discardpile');
     }
 
     /**

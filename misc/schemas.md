@@ -20,7 +20,7 @@
 - 12
 - 13
 - X (joker)
-- Active playr (Paw)
+- Active player (Paw)
 ### card_location: 
 - deck
 - pool

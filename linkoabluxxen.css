@@ -64,72 +64,91 @@
     }
 */
 
-.bg-card {
-  width: 262px;
-  height: 407px;
-  background-image: url("cards.png");
+.bg-card,
+.bg-card-front {
+  width: calc(262px / 2);
+  height: calc(407px / 2);
+  background-image: url("img/cards.png") !important;
 }
 
-.bg-card--x {
-  background-position: -10px -10px;
-}
-
-.bg-card--12 {
-  background-position: -292px -10px;
-}
-
-.bg-card--7 {
-  background-position: -574px -10px;
-}
-
-.bg-card--8 {
-  background-position: -856px -10px;
-}
-
-.bg-card--3 {
-  background-position: -10px -437px;
-}
-
-.bg-card--1 {
-  background-position: -292px -437px;
+.bg-card-front {
+  background-image: url("img/cards.png") !important;
 }
 
 .bg-card--back {
-  background-position: -574px -437px;
+  background-position: -574px -437px !important;
 }
 
+.bg-card-front[data-type="14"],
+.bg-card--14 {
+  background-position: -10px -10px !important;
+}
+
+.bg-card-front[data-type="12"],
+.bg-card--12 {
+  background-position: -292px -10px !important;
+}
+
+.bg-card-front[data-type="7"],
+.bg-card--7 {
+  background-position: -574px -10px !important;
+}
+
+.bg-card-front[data-type="8"],
+.bg-card--8 {
+  background-position: -856px -10px !important;
+}
+
+.bg-card-front[data-type="3"],
+.bg-card--3 {
+  background-position: -10px -437px !important;
+}
+
+.bg-card-front[data-type="1"],
+.bg-card--1 {
+  background-position: -292px -437px !important;
+}
+
+.bg-card-front[data-type="10"],
 .bg-card--10 {
-  background-position: -856px -437px;
+  background-position: -856px -437px !important;
 }
 
+.bg-card-front[data-type="13"],
 .bg-card--13 {
-  background-position: -1138px -10px;
+  background-position: -1138px -10px !important;
 }
 
+.bg-card-front[data-type="9"],
 .bg-card--9 {
-  background-position: -1138px -437px;
+  background-position: -1138px -437px !important;
 }
 
+.bg-card-front[data-type="5"],
 .bg-card--5 {
-  background-position: -10px -864px;
+  background-position: -10px -864px !important;
 }
 
+.bg-card-front[data-type="11"],
 .bg-card--11 {
-  background-position: -292px -864px;
+  background-position: -292px -864px !important;
 }
 
+.bg-card-front[data-type="2"],
 .bg-card--2 {
-  background-position: -574px -864px;
+  background-position: -574px -864px !important;
 }
 
 .bg-card--fp {
-  background-position: -856px -864px;
+  background-position: -856px -864px !important;
 }
 
+.bg-card-front[data-type="6"],
 .bg-card--6 {
-  background-position: -1138px -864px;
+  background-position: -1138px -864px !important;
 }
 
+.bg-card-front[data-type="4"],
 .bg-card--4 {
-  background-position: -1420px -10px;
+  background-position: -1420px -10px !important;
 }
