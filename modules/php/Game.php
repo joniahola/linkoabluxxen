@@ -160,13 +160,16 @@ class Game extends \Bga\GameFramework\Table
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
 
         // Cards in player hand
+        $result['card_types'] = self::$CARD_TYPES;
         
         $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
         $result['playertable'] = $this->cards->getCardsInLocation('playertable', $current_player_id);
+        $result['players_hand'] = [];
+        foreach($result["players"] as $player_id => $player) {
+            $result['players_hand'][$player_id] = $this->cards->getCardsInLocation('hand', $player_id);
+        }
         $result['pool'] = $this->cards->getCardsInLocation('pool');
         $result['discardpile'] = $this->cards->getCardsInLocation('discardpile');
-
-        $result['card_types'] = self::$CARD_TYPES;
 
         $result['deck'] = $this->cards->getCardsInLocation('deck');
 
@@ -229,6 +232,20 @@ class Game extends \Bga\GameFramework\Table
             $cards[] = ['type' => $key, 'type_arg' => $key, 'nbr' => $counter];
         }
         $this->cards->createCards($cards, 'deck', 0);
+
+        //pick cards for players
+        $this->cards->shuffle('deck');
+        $how_many_cards = 11;
+        for($i = 0; $i < $how_many_cards; $i++) {
+            foreach($players as $player_id => $player) {
+                $this->cards->pickCardForLocation('deck', 'hand', $player_id);
+            }
+        }
+
+        //pick cards for pool
+        $how_many_cards = 6;
+        $this->cards->pickCardsForLocation($how_many_cards, 'deck', 'pool', 0);
+
 
         // Activate first player once everything has been initialized and ready.
         $this->activeNextPlayer();

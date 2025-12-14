@@ -47,73 +47,106 @@ define([
 
     setup: function (gamedatas) {
       console.log("Starting game setup", gamedatas);
+      this._generatePlayAreasSetup(gamedatas);
+      this._managerSetup(gamedatas);
+      this._poolSetup(gamedatas);
+      this._myhandSetup(gamedatas);
+      this._playerBoardsSetup(gamedatas);
+      // Setup game notifications to handle (see "setupNotifications" method below)
+      this.setupNotifications();
 
-      // Add deck display area to your HTML
-      document.getElementById("game_play_area").insertAdjacentHTML(
-        "beforeend",
-        `
-        <div id="deck_wrap" class="whiteblock">
-            <b id="deck_label">${_("Deck")}</b>
-            <div id="deck">
-               
-            </div>
-        </div>
-        `
-      );
-
-      document.getElementById("game_play_area").insertAdjacentHTML(
-        "beforeend",
-        `
-                <div id="myhand_wrap" class="whiteblock">
-                    <b id="myhand_label">${_("My hand")}</b>
-                    <div id="myhand">
-                       
-                    </div>
-                </div>
-
-            `
-      );
-
-      // Example to add a div on the game area
-      this.getGameAreaElement().insertAdjacentHTML(
-        "beforeend",
-        `
-                <div id="player-tables"></div>
-            `
-      );
-
-      // Hide hand zone from spectators
       if (this.isSpectator) {
-        document.getElementById("myhand_wrap").style.display = "none";
+        this._spectatorSetup(gamedatas);
       }
-
+      this._debugSetup(gamedatas);
+      console.log("Ending game setup");
+    },
+    _managerSetup: function (gamedatas) {
       // create the animation manager, and bind it to the `game.bgaAnimationsActive()` function
       this.animationManager = new BgaAnimations.Manager({
         animationsActive: () => this.bgaAnimationsActive(),
       });
 
-      const cardWidth = 262 / 2;
-      const cardHeight = 407 / 2;
-
       // create the card manager
       this.cardsManager = new BgaCards.Manager({
         animationManager: this.animationManager,
-        type: "bg-card",
+        type: "card",
         getId: (card) => card.id,
-        cardWidth: cardWidth,
-        cardHeight: cardHeight,
-        cardBorderRadius: "5%",
+        cardWidth: 128,
+        cardHeight: 199,
         setupFrontDiv: (card, div) => {
           console.log({ card, div });
           div.dataset.type = card.type; // suit 1..4
-          div.dataset.typeArg = card.type_arg; // value 2..14
           this.addTooltipHtml(
             div.id,
             _(this.gamedatas.card_types[card.type_arg]["card_name"])
           );
         },
       });
+    },
+    _generatePlayAreasSetup: function (gamedatas) {
+      document.getElementById("game_play_area").insertAdjacentHTML(
+        "beforeend",
+        `
+          <div class="whiteblock">
+                
+              <div id="deck_area" class="deck-area">
+                <!-- Pool area -->
+                <b id="pool_label">${_("Pool")}</b>
+                <div id="pool" class="pool-cards"></div>
+                <div id="pool_counter" class="counter">${
+                  gamedatas.pool ? Object.keys(gamedatas.pool).length : 0
+                }</div>
+                <!-- Discard Pile -->
+                <div id="discard_wrap" class="card-stock-wrap">
+                    <b id="stock-label">${_("Discard")}</b>
+                    <div id="discard" class="card-stock"></div>
+                    <div id="discard_counter" class="counter">0</div>
+                </div>
+                <!-- Deck -->
+                <div id="deck_wrap" class="card-stock-wrap">
+                    <b id="stock-label">${_("Deck")}</b>
+                    <div id="deck" class="card-stock"></div>
+                    <div id="deck_counter" class="counter">${
+                      gamedatas.deck ? Object.keys(gamedatas.deck).length : 0
+                    }</div>
+                </div>
+              </div>
+          </div>
+          
+          <div id="myhand_wrap" class="whiteblock hand-area">
+              <b id="myhand_label">${_("My hand")}</b>
+              <div id="myhand"></div>
+              <div id="hand_counter" class="counter">${
+                gamedatas.hand ? Object.keys(gamedatas.hand).length : 0
+              }</div>
+          </div>
+          `
+      );
 
+      // Add some CSS styles
+      dojo.addClass("game_play_area", "linko-play-area");
+    },
+    _poolSetup: function (gamedatas) {
+      // Create a stock for the pool (face down cards)
+      this.deckStock = new BgaCards.HandStock(
+        this.cardsManager,
+        document.getElementById("pool"),
+        {
+          fanShaped: false,
+          sort: false, // Don't sort deck cards
+        }
+      );
+
+      // Display deck cards
+      if (gamedatas.deck && Object.keys(gamedatas.deck).length > 0) {
+        const deckCardsArray = Object.values(gamedatas.deck).slice(0, 6);
+        this.deckStock.addCards(deckCardsArray);
+
+        console.log(this.deckStock);
+      }
+    },
+    _myhandSetup: function (gamedatas) {
       // create the stock, in the game setup
       this.handStock = new BgaCards.HandStock(
         this.cardsManager,
@@ -124,44 +157,20 @@ define([
       );
 
       this.handStock.onCardClick = (card) => {
+        console.log(card);
         this.onCardClick(card);
       };
 
-      // Cards in player's hand
-      console.log(this.gamedatas.hand);
-      console.log({
-        gamedatas: this.gamedatas,
-        handStock: this.handStock,
-        cardsManager: this.cardsManager,
-        animationManager: this.animationManager,
-      });
-
-      window.test = {
-        gamedatas: this.gamedatas,
-        handStock: this.handStock,
-        cardsManager: this.cardsManager,
-        animationManager: this.animationManager,
-      };
-
-      // Create a stock for the deck (face down cards)
-      this.deckStock = new BgaCards.HandStock(
-        this.cardsManager,
-        document.getElementById("deck"),
-        {
-          sort: false, // Don't sort deck cards
-          direction: "column", // Stack them vertically
-          overlap: "15px", // Overlap cards slightly
-          center: false,
-        }
-      );
-
-      // Display deck cards
+      // Display deck cards if they exist
       if (gamedatas.deck && Object.keys(gamedatas.deck).length > 0) {
-        //const deckCardsArray = Object.values(gamedatas.deck);
-        const deckCardsArray = Object.values(gamedatas.deck).slice(0, 10);
-        this.deckStock.addCards(deckCardsArray);
-      }
+        // Convert the deck object to array and add to handStock
+        const deckCardsArray = Object.values(gamedatas.deck).slice(12, 23);
+        this.handStock.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
 
+        console.log(this.deckStock);
+      }
+    },
+    _playerBoardsSetup: function (gamedatas) {
       // Setting up player boards
       Object.values(gamedatas.players).forEach((player) => {
         // example of setting up players boards
@@ -173,59 +182,25 @@ define([
         );
         const counter = new ebg.counter();
         counter.create(`cards-player-counter-${player.id}`, {
-          value: 11,
+          value: Object.keys(gamedatas.players_hand[player.id]).length,
           playerCounter: "cards",
           playerId: player.id,
         });
-
-        // example of adding a div for each player
-        document.getElementById("player-tables").insertAdjacentHTML(
-          "beforeend",
-          `
-                <div id="player-table-${player.id}">
-                    <strong>${player.name}</strong>
-                    <div>Player zone content goes here</div>
-                </div>
-            `
-        );
       });
-
-      // Setting up player boards
-      Object.values(gamedatas.players).forEach((player) => {
-        // example of adding a div for each player
-        console.log(player);
-        document.getElementById("player-tables").insertAdjacentHTML(
-          "beforeend",
-          `
-                    <div class="whiteblock" id="player-table-${player.id}">
-                        <strong>${player.name}</strong>
-                        <div id="tableau_${player.id}"></div>
-                    </div>
-          `
-        );
-      });
-
-      // Cards in player's hand
-      console.log(this.gamedatas.hand);
-
-      // Display deck cards if they exist
-      if (gamedatas.deck && Object.keys(gamedatas.deck).length > 0) {
-        console.log("Deck cards:", gamedatas.deck);
-
-        // Convert the deck object to array and add to handStock
-        const deckCardsArray = Object.values(gamedatas.deck).slice(0, 11);
-        this.handStock.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
-
-        // Alternatively, if you want to display them differently:
-        // this.displayDeckCards(deckCardsArray);
-      }
-
-      // TODO: Set up your game interface here, according to "gamedatas"
-
-      // Setup game notifications to handle (see "setupNotifications" method below)
-      this.setupNotifications();
-
-      console.log("Ending game setup");
+    },
+    _spectatorSetup: function (gamedatas) {
+      document.getElementById("myhand_wrap").style.display = "none";
+    },
+    _debugSetup: function (gamedatas) {
+      const debugData = {
+        hand: this.gamedatas.hand,
+        gamedatas: this.gamedatas,
+        handStock: this.handStock,
+        cardsManager: this.cardsManager,
+        animationManager: this.animationManager,
+      };
+      console.log(debugData);
+      window.linko = debugData;
     },
 
     ///////////////////////////////////////////////////
@@ -341,40 +316,11 @@ define([
       });
     },
 
-    ///////////////////////////////////////////////////
-    //// Reaction to cometD notifications
-
-    /*
-            setupNotifications:
-            
-            In this method, you associate each of your game notifications with your local method to handle it.
-            
-            Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
-                  your linkoabluxxen.game.php file.
-        
-        */
     setupNotifications: function () {
       console.log("notifications subscriptions setup");
 
       // automatically listen to the notifications, based on the `notif_xxx` function on this class.
       this.bgaSetupPromiseNotifications();
     },
-
-    // TODO: from this point and below, you can write your game notifications handling methods
-
-    /*
-        Example:
-        
-        notif_cardPlayed: async function( args )
-        {
-            console.log( 'notif_cardPlayed' );
-            console.log( args );
-            
-            // Note: args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-            
-            // TODO: play the card in the user interface.
-        },    
-        
-        */
   });
 });
