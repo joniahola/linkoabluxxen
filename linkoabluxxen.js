@@ -85,43 +85,83 @@ define([
       });
     },
     _generatePlayAreasSetup: function (gamedatas) {
+      // get another player playing areas
+      var extra_areas = "";
+      if (gamedatas.players_hands && gamedatas.current_player) {
+        counter = Object.keys(gamedatas.players_hands).forEach((key) => {
+          if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
+            var player = gamedatas.players_hands[key];
+            console.log(key, player, gamedatas);
+            var name = player.name;
+
+            extra_areas =
+              extra_areas +
+              `
+              <div id="${key}_table_wrap" class="whiteblock table-area">
+                  <b id="${key}_table_label">${name} ${_("table")}</b>
+                  <div id="${key}_table"></div>
+                  <div id="${key}_table_counter" class="counter">${
+                player.playertable ? Object.keys(player.playertable).length : 0
+              }</div>
+              </div>
+              <div id="${key}_myhand_wrap" class="whiteblock hand-area">
+                  <b id="${key}_myhand_label">${name} ${_("hand")}</b>
+                  <div id="${key}_myhand"></div>
+                  <div id="${key}_hand_counter" class="counter">${
+                player.hand ? Object.keys(player.hand).length : 0
+              }</div>
+              </div>
+            `;
+          }
+        });
+      }
+
       document.getElementById("game_play_area").insertAdjacentHTML(
         "beforeend",
         `
-          <div class="whiteblock">
-                
-              <div id="deck_area" class="deck-area">
-                <!-- Pool area -->
-                <b id="pool_label">${_("Pool")}</b>
-                <div id="pool" class="pool-cards"></div>
-                <div id="pool_counter" class="counter">${
-                  gamedatas.pool ? Object.keys(gamedatas.pool).length : 0
-                }</div>
-                <!-- Discard Pile -->
-                <div id="discard_wrap" class="card-stock-wrap">
-                    <b id="stock-label">${_("Discard")}</b>
-                    <div id="discard" class="card-stock"></div>
-                    <div id="discard_counter" class="counter">0</div>
-                </div>
-                <!-- Deck -->
-                <div id="deck_wrap" class="card-stock-wrap">
-                    <b id="stock-label">${_("Deck")}</b>
-                    <div id="deck" class="card-stock"></div>
-                    <div id="deck_counter" class="counter">${
-                      gamedatas.deck ? Object.keys(gamedatas.deck).length : 0
-                    }</div>
-                </div>
-              </div>
+          <div id="deck_area" class="whiteblock deck-area">
+            <b id="stock-label">${_("Deck")}</b>
+            <div id="deck" class="card-stock"></div>
+            <div id="deck_counter" class="counter">${
+              gamedatas.deck ? Object.keys(gamedatas.deck).length : 0
+            }</div>
           </div>
-          
+
+          <div id="discard_area" class="whiteblock discard-area">
+            <b id="stock-label">${_("Discard")}</b>
+            <div id="discard" class="card-stock"></div>
+            <div id="discard_counter" class="counter">${
+              gamedatas.discardpile
+                ? Object.keys(gamedatas.discardpile).length
+                : 0
+            }</div>
+          </div>
+          <div id="pool_area" class="whiteblock pool-area">
+            <b id="pool_label">${_("Pool")}</b>
+            <div id="pool" class="pool-cards"></div>
+            <div id="pool_counter" class="counter">${
+              gamedatas.pool ? Object.keys(gamedatas.pool).length : 0
+            }</div>
+          </div>
+          <div id="mytable_wrap" class="whiteblock table-area">
+              <b id="mytable_label">${_("My table")}</b>
+              <div id="mytable"></div>
+              <div id="table_counter" class="counter">${
+                gamedatas.current_player.playertable
+                  ? Object.keys(gamedatas.current_player.playertable).length
+                  : 0
+              }</div>
+          </div>
           <div id="myhand_wrap" class="whiteblock hand-area">
               <b id="myhand_label">${_("My hand")}</b>
               <div id="myhand"></div>
               <div id="hand_counter" class="counter">${
-                gamedatas.hand ? Object.keys(gamedatas.hand).length : 0
+                gamedatas.current_player.hand
+                  ? Object.keys(gamedatas.current_player.hand).length
+                  : 0
               }</div>
           </div>
-          `
+          ` + extra_areas
       );
 
       // Add some CSS styles
@@ -182,7 +222,7 @@ define([
         );
         const counter = new ebg.counter();
         counter.create(`cards-player-counter-${player.id}`, {
-          value: Object.keys(gamedatas.players_hand[player.id]).length,
+          value: Object.keys(gamedatas.players_hands[player.id]).length,
           playerCounter: "cards",
           playerId: player.id,
         });

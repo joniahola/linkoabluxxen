@@ -154,23 +154,29 @@ class Game extends \Bga\GameFramework\Table
         // Get information about players.
         // NOTE: you can retrieve some extra field you added for "player" table in `dbmodel.sql` if you need it.
         $result["players"] = $this->getCollectionFromDb(
-            "SELECT `player_id` `id`, `player_score` `score` FROM `player`"
+            "SELECT `player_id` `id`, `player_score` `score`, `player_name` FROM `player`"
         );
 
         // TODO: Gather all information about current game situation (visible by player $current_player_id).
 
         // Cards in player hand
         $result['card_types'] = self::$CARD_TYPES;
-        
-        $result['hand'] = $this->cards->getCardsInLocation('hand', $current_player_id);
-        $result['playertable'] = $this->cards->getCardsInLocation('playertable', $current_player_id);
-        $result['players_hand'] = [];
+
+        $result['current_player'] = [
+            'id' => $current_player_id,
+            'hand' => $this->cards->getCardsInLocation('hand', $current_player_id),
+            'playertable' => $this->cards->getCardsInLocation('playertable', $current_player_id)
+        ];
+        $result['players_hands'] = [];
         foreach($result["players"] as $player_id => $player) {
-            $result['players_hand'][$player_id] = $this->cards->getCardsInLocation('hand', $player_id);
+            $result['players_hands'][$player_id] = [
+                'name' => $player["player_name"],
+                'hand' => $this->cards->getCardsInLocation('hand', $player_id),
+                'playertable' => $this->cards->getCardsInLocation('playertable', $player_id),
+            ];
         }
         $result['pool'] = $this->cards->getCardsInLocation('pool');
         $result['discardpile'] = $this->cards->getCardsInLocation('discardpile');
-
         $result['deck'] = $this->cards->getCardsInLocation('deck');
 
         return $result;
