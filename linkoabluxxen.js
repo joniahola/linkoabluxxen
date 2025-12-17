@@ -261,7 +261,7 @@ define([
           if (player.hand && Object.keys(player.hand).length > 0) {
             // Convert the deck object to array and add to handStock
             const deckCardsArray = Object.values(player.hand);
-            stock.hand.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
+            stock.hand.addCards(deckCardsArray);
           }
 
           if (
@@ -270,7 +270,7 @@ define([
           ) {
             // Convert the deck object to array and add to handStock
             const deckCardsArray = Object.values(player.playertable);
-            stock.table.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
+            stock.table.addCards(deckCardsArray);
           }
           this.others_stock[key] = stock;
         }
@@ -304,7 +304,7 @@ define([
       ) {
         // Convert the deck object to array and add to handStock
         const deckCardsArray = Object.values(gamedatas.current_player.hand);
-        this.handStock.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
+        this.handStock.addCards(deckCardsArray);
       }
 
       if (
@@ -315,7 +315,7 @@ define([
         const deckCardsArray = Object.values(
           gamedatas.current_player.playertable
         );
-        this.tableStock.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
+        this.tableStock.addCards(deckCardsArray);
       }
     },
     _playerBoardsSetup: function (gamedatas) {
