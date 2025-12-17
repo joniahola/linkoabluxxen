@@ -80,7 +80,6 @@ define([
         cardWidth: 128,
         cardHeight: 199,
         setupFrontDiv: (card, div) => {
-          console.log({ card, div });
           div.dataset.type = card.type; // suit 1..4
           this.addTooltipHtml(
             div.id,
@@ -403,27 +402,100 @@ define([
     //
     onUpdateActionButtons: function (stateName, args) {
       console.log("onUpdateActionButtons: " + stateName, args);
+      if (!this.isCurrentPlayerActive()) {
+        return;
+      }
 
-      if (this.isCurrentPlayerActive()) {
-        switch (stateName) {
-          case "PlayerTurn":
-            const playableCardsIds = args.playableCardsIds; // returned by the argPlayerTurn
-
-            // Add test action buttons in the action status bar, simulating a card click:
-            playableCardsIds.forEach((cardId) =>
-              this.statusBar.addActionButton(
-                _("Play card with id ${card_id}").replace("${card_id}", cardId),
-                () => this.onCardClick(cardId)
-              )
+      switch (stateName) {
+        case "PlayerTurn":
+          const hand = Object.values(args.hand)
+            .sort((a, b) => a.type - b.type)
+            .filter(
+              (card, index, arr) =>
+                index === 0 || card.type !== arr[index - 1].type
             );
+          this.statusBar.removeActionButtons();
+          Object.keys(hand).forEach((key) => {
+            let number = hand[key].type;
+            if (number == "14") {
+              number = "X";
+            }
 
-            this.statusBar.addActionButton(
-              _("Pass"),
-              () => this.bgaPerformAction("actPass"),
-              { color: "secondary" }
-            );
-            break;
-        }
+            this.statusBar.addActionButton(number, () => {
+              //next we need to find out how many cards
+              this.statusBar.removeActionButtons();
+              const handWithNumber = Object.values(args.hand)
+                .sort((a, b) => a.type - b.type)
+                .filter(
+                  (card, _index, _arr) =>
+                    card.type == number || card.type == "14"
+                );
+              console.log("test", handWithNumber);
+
+              // Separate and count cards
+              const numberCards = handWithNumber.filter(
+                (card) => card.type == number
+              );
+              const jokerCards = handWithNumber.filter(
+                (card) => card.type == "14"
+              );
+
+              // Generate options
+              const options = [];
+
+              // For each possible number of number cards (1 to all)
+              for (
+                let numCount = 1;
+                numCount <= numberCards.length;
+                numCount++
+              ) {
+                // For each possible number of joker cards (0 to all)
+                for (
+                  let jokerCount = 0;
+                  jokerCount <= jokerCards.length;
+                  jokerCount++
+                ) {
+                  options.push({ numCount, jokerCount });
+                }
+              }
+
+              this.statusBar.addActionButton("← Back", () =>
+                this.onUpdateActionButtons(stateName, args)
+              );
+
+              // Create buttons
+              options.forEach((option, index) => {
+                const description =
+                  option.jokerCount === 0
+                    ? `Play ${
+                        option.numCount == 1 ? "" : option.numCount + "x"
+                      }${number}`
+                    : `Play ${
+                        option.numCount == 1 ? "" : option.numCount + "x"
+                      }${number} & ${
+                        option.jokerCount == 1 ? "" : option.jokerCount + "x"
+                      }X`;
+
+                this.statusBar.addActionButton(description, () => {
+                  console.log(`Selected option: ${description}`);
+
+                  // Simple card selection: take first X cards of each type
+                  const selectedCards = [
+                    ...numberCards.slice(0, option.numCount),
+                    ...jokerCards.slice(0, option.jokerCount),
+                  ];
+
+                  console.log("Selected cards:", selectedCards);
+
+                  // Play cards
+                  // selectedCards.forEach(card => this.onCardClick(card.id));
+                });
+              });
+
+              //this.onCardClick(key);
+            });
+          });
+          break;
       }
     },
 

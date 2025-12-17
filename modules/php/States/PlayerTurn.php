@@ -18,8 +18,8 @@ class PlayerTurn extends GameState
         parent::__construct($game,
             id: 10,
             type: StateType::ACTIVE_PLAYER,
-            description: clienttranslate('${actplayer} must play a card or pass'),
-            descriptionMyTurn: clienttranslate('${you} must play a card or pass'),
+            description: clienttranslate('${actplayer} must play card(s):'),
+            descriptionMyTurn: clienttranslate('${you} must play card(s):'),
         );
     }
 
@@ -30,12 +30,16 @@ class PlayerTurn extends GameState
      */
     public function getArgs(): array
     {
-        // Get some values from the current game situation from the database.
+        $playerId = $this->game->getActivePlayerId();
+        
+        // Get player's hand - adjust this based on your actual implementation
+        $playerHand = $this->game->cards->getCardsInLocation('hand', $playerId);
 
         return [
-            "playableCardsIds" => [1, 2],
+            "player" => $playerId,
+            "hand" => $playerHand
         ];
-    }    
+    }
 
     /**
      * Player action, example content.
