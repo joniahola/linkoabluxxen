@@ -64,13 +64,6 @@
     }
 */
 
-.card,
-.card-front {
-  width: 128px;
-  height: 199px;
-  background-image: url("img/cards.png") !important;
-}
-
 .card-front {
   background-image: url("img/cards.png") !important;
 }
@@ -212,4 +205,8 @@
   justify-content: center;
   font-size: 12px;
   font-weight: bold;
+}
+
+.card-stock .bga-cards_selectable-card {
+  outline: none !important;
 }

@@ -49,8 +49,13 @@ define([
       console.log("Starting game setup", gamedatas);
       this._generatePlayAreasSetup(gamedatas);
       this._managerSetup(gamedatas);
+
       this._poolSetup(gamedatas);
-      this._myhandSetup(gamedatas);
+      this._discardSetup(gamedatas);
+      this._deckSetup(gamedatas);
+      this._currentPlayerSetup(gamedatas);
+      this._otherPlayersSetup(gamedatas);
+
       this._playerBoardsSetup(gamedatas);
       // Setup game notifications to handle (see "setupNotifications" method below)
       this.setupNotifications();
@@ -88,7 +93,7 @@ define([
       // get another player playing areas
       var extra_areas = "";
       if (gamedatas.players_hands && gamedatas.current_player) {
-        counter = Object.keys(gamedatas.players_hands).forEach((key) => {
+        Object.keys(gamedatas.players_hands).forEach((key) => {
           if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
             var player = gamedatas.players_hands[key];
             console.log(key, player, gamedatas);
@@ -169,9 +174,29 @@ define([
     },
     _poolSetup: function (gamedatas) {
       // Create a stock for the pool (face down cards)
-      this.deckStock = new BgaCards.HandStock(
+      this.poolStock = new BgaCards.LineStock(
         this.cardsManager,
         document.getElementById("pool"),
+        {
+          fanShaped: false,
+          sort: false, // Don't sort deck cards
+        }
+      );
+      this.poolStock.setSelectionMode("multiple");
+
+      // Display deck cards
+      if (gamedatas.pool && Object.keys(gamedatas.pool).length > 0) {
+        const deckCardsArray = Object.values(gamedatas.pool);
+        this.poolStock.addCards(deckCardsArray);
+
+        console.log(this.poolStock);
+      }
+    },
+    _deckSetup: function (gamedatas) {
+      // Create a stock for the pool (face down cards)
+      this.deckStock = new BgaCards.LineStock(
+        this.cardsManager,
+        document.getElementById("deck"),
         {
           fanShaped: false,
           sort: false, // Don't sort deck cards
@@ -180,34 +205,117 @@ define([
 
       // Display deck cards
       if (gamedatas.deck && Object.keys(gamedatas.deck).length > 0) {
-        const deckCardsArray = Object.values(gamedatas.deck).slice(0, 6);
+        const deckCardsArray = Object.values(gamedatas.deck);
         this.deckStock.addCards(deckCardsArray);
-
-        console.log(this.deckStock);
       }
     },
-    _myhandSetup: function (gamedatas) {
+    _discardSetup: function (gamedatas) {
+      // Create a stock for the pool (face down cards)
+      this.discardStock = new BgaCards.LineStock(
+        this.cardsManager,
+        document.getElementById("discard"),
+        {
+          fanShaped: false,
+          sort: false, // Don't sort deck cards
+        }
+      );
+
+      // Display deck cards
+      if (gamedatas.discard && Object.keys(gamedatas.discard).length > 0) {
+        const deckCardsArray = Object.values(gamedatas.discard);
+        this.discardStock.addCards(deckCardsArray);
+      }
+    },
+    _otherPlayersSetup: function (gamedatas) {
+      this.others_stock = [];
+
+      Object.keys(gamedatas.players_hands).forEach((key) => {
+        if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
+          var player = gamedatas.players_hands[key];
+          console.log(key, player, gamedatas);
+          var name = player.name;
+
+          //player.playertable
+          //player.hand
+          //${key}_myhand
+          var stock = {
+            hand: new BgaCards.LineStock(
+              this.cardsManager,
+              document.getElementById(key + "_myhand"),
+              {
+                sort: (a, b) => a.type - b.type,
+                fanShaped: false,
+              }
+            ),
+            table: (this.tableStock = new BgaCards.LineStock(
+              this.cardsManager,
+              document.getElementById(key + "_table"),
+              {
+                fanShaped: false,
+                sort: false,
+              }
+            )),
+          };
+
+          // Display deck cards if they exist
+          if (player.hand && Object.keys(player.hand).length > 0) {
+            // Convert the deck object to array and add to handStock
+            const deckCardsArray = Object.values(player.hand);
+            stock.hand.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
+          }
+
+          if (
+            player.playertable &&
+            Object.keys(player.playertable).length > 0
+          ) {
+            // Convert the deck object to array and add to handStock
+            const deckCardsArray = Object.values(player.playertable);
+            stock.table.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
+          }
+          this.others_stock[key] = stock;
+        }
+      });
+    },
+    _currentPlayerSetup: function (gamedatas) {
       // create the stock, in the game setup
       this.handStock = new BgaCards.HandStock(
         this.cardsManager,
         document.getElementById("myhand"),
         {
           sort: (a, b) => a.type - b.type,
+          fanShaped: false,
+        }
+      );
+      this.handStock.setSelectionMode("multiple");
+
+      this.tableStock = new BgaCards.LineStock(
+        this.cardsManager,
+        document.getElementById("mytable"),
+        {
+          fanShaped: false,
+          sort: false,
         }
       );
 
-      this.handStock.onCardClick = (card) => {
-        console.log(card);
-        this.onCardClick(card);
-      };
-
       // Display deck cards if they exist
-      if (gamedatas.deck && Object.keys(gamedatas.deck).length > 0) {
+      if (
+        gamedatas.current_player.hand &&
+        Object.keys(gamedatas.current_player.hand).length > 0
+      ) {
         // Convert the deck object to array and add to handStock
-        const deckCardsArray = Object.values(gamedatas.deck).slice(12, 23);
+        const deckCardsArray = Object.values(gamedatas.current_player.hand);
         this.handStock.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
+      }
 
-        console.log(this.deckStock);
+      if (
+        gamedatas.current_player.playertable &&
+        Object.keys(gamedatas.current_player.playertable).length > 0
+      ) {
+        // Convert the deck object to array and add to handStock
+        const deckCardsArray = Object.values(
+          gamedatas.current_player.playertable
+        );
+        this.tableStock.addCards(deckCardsArray); // tää piirtyy nyt my cardsiin
       }
     },
     _playerBoardsSetup: function (gamedatas) {
@@ -222,7 +330,7 @@ define([
         );
         const counter = new ebg.counter();
         counter.create(`cards-player-counter-${player.id}`, {
-          value: Object.keys(gamedatas.players_hands[player.id]).length,
+          value: Object.keys(gamedatas.players_hands[player.id].hand).length,
           playerCounter: "cards",
           playerId: player.id,
         });
