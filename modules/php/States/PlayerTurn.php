@@ -8,7 +8,7 @@ use Bga\GameFramework\StateType;
 use Bga\GameFramework\States\GameState;
 use Bga\GameFramework\States\PossibleAction;
 use Bga\GameFramework\UserException;
-use Bga\Games\LinkoAbluxxen\Game;
+use Bga\Games\LinkoAbluxxen\Game;   
 
 class PlayerTurn extends GameState
 {
@@ -34,10 +34,12 @@ class PlayerTurn extends GameState
         
         // Get player's hand - adjust this based on your actual implementation
         $playerHand = $this->game->cards->getCardsInLocation('hand', $playerId);
+        $playerTable = $this->game->cards->getCardsInLocation('playertable', $playerId);
 
         return [
             "player" => $playerId,
-            "hand" => $playerHand
+            "hand" => $playerHand,
+            "table" => $playerTable
         ];
     }
 
@@ -50,50 +52,51 @@ class PlayerTurn extends GameState
      * @throws UserException
      */
     #[PossibleAction]
-    public function actPlayCard(int $card_id, int $activePlayerId, array $args)
+    public function actPlayCard(string $selectedCards, int $activePlayerId, array $args)
     {
-        // check input values
-        $playableCardsIds = $args['playableCardsIds'];
-        if (!in_array($card_id, $playableCardsIds)) {
-            throw new UserException('Invalid card choice');
+        $selectedCards = json_decode($selectedCards, true);
+        $gain_points = count($selectedCards);
+        $hand = $args['hand'];
+        $playedCard_string = "";
+
+        $selectedCards_ids = array_column($selectedCards, 'id');
+        $hand_ids = array_column($hand, 'id');
+        $handSet = array_flip($hand_ids);
+        $missing = array_filter($selectedCards_ids, fn($id) => !isset($handSet[$id]));
+        if (!empty($missing)) {
+            throw new UserException('Invalid card(s) choice');
         }
 
-        // Add your game logic to play a card here.
-        $card_name = Game::$CARD_TYPES[$card_id]['card_name'];
+        foreach($selectedCards as $card) {
+            $id = intval($card['type']);
+            $card_name = Game::$CARD_TYPES[$id]['card_name'];
+            $playedCard_string .= $card_name . " ";
+        }
+        
+        $playedCard_string = trim($playedCard_string);
 
         // Notify all players about the card played.
-        $this->notify->all("cardPlayed", clienttranslate('${player_name} plays ${card_name}'), [
+        $this->notify->all("cardPlayed", clienttranslate('${player_name} plays ${cards}'), [
             "player_id" => $activePlayerId,
             "player_name" => $this->game->getPlayerNameById($activePlayerId), // remove this line if you uncomment notification decorator
-            "card_name" => $card_name, // remove this line if you uncomment notification decorator
-            "card_id" => $card_id,
-            "i18n" => ['card_name'], // remove this line if you uncomment notification decorator
+            "cards" => $playedCard_string, // remove this line if you uncomment notification decorator
+            "i18n" => ['cards'], // remove this line if you uncomment notification decorator
         ]);
+
+        $this->playerScore->inc($activePlayerId, $gain_points);
+
+        $this->game->cards->moveCards($selectedCards_ids, 'playertable', $activePlayerId);
+        return NextPlayer::class;
+        // check input values
+        /*$playableCardsIds = $args['playableCardsIds'];
+        if (!in_array($card_id, $playableCardsIds)) {
+            throw new UserException('Invalid card choice');
+        }*/
+
+        // Add your game logic to play a card here.
 
         // in this example, the player gains 1 points each time he plays a card
-        $this->playerScore->inc($activePlayerId, 1);
-
-        // at the end of the action, move to the next state
-        return NextPlayer::class;
-    }
-
-    /**
-     * Player action, example content.
-     *
-     * In this scenario, each time a player pass, this method will be called. This method is called directly
-     * by the action trigger on the front side with `bgaPerformAction`.
-     */
-    #[PossibleAction]
-    public function actPass(int $activePlayerId)
-    {
-        // Notify all players about the choice to pass.
-        $this->notify->all("pass", clienttranslate('${player_name} passes'), [
-            "player_id" => $activePlayerId,
-            "player_name" => $this->game->getPlayerNameById($activePlayerId), // remove this line if you uncomment notification decorator
-        ]);
-
-        // in this example, the player gains 1 energy each time he passes
-        $this->game->playerEnergy->inc($activePlayerId, 1);
+        
 
         // at the end of the action, move to the next state
         return NextPlayer::class;
@@ -118,6 +121,6 @@ class PlayerTurn extends GameState
         // Example of zombie level 1:
         $args = $this->getArgs();
         $zombieChoice = $this->getRandomZombieChoice($args['playableCardsIds']); // random choice over possible moves
-        return $this->actPlayCard($zombieChoice, $playerId, $args); // this function will return the transition to the next state
+        return $this->actPlayCard([1,2,3], $playerId, [1,2,3,4,5]); // this function will return the transition to the next state
     }
 }

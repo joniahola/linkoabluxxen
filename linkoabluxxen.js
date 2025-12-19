@@ -25,8 +25,6 @@ define([
 ], function (dojo, declare, gamegui, counter, BgaAnimations, BgaCards) {
   return declare("bgagame.linkoabluxxen", ebg.core.gamegui, {
     constructor: function () {
-      console.log("linkoabluxxen constructor");
-
       // Here, you can init the global variables of your user interface
       // Example:
       // this.myGlobalValue = 0;
@@ -46,13 +44,12 @@ define([
         */
 
     setup: function (gamedatas) {
-      console.log("Starting game setup", gamedatas);
       this._generatePlayAreasSetup(gamedatas);
       this._managerSetup(gamedatas);
 
       this._poolSetup(gamedatas);
       this._discardSetup(gamedatas);
-      this._deckSetup(gamedatas);
+      //this._deckSetup(gamedatas);
       this._currentPlayerSetup(gamedatas);
       this._otherPlayersSetup(gamedatas);
 
@@ -64,7 +61,6 @@ define([
         this._spectatorSetup(gamedatas);
       }
       this._debugSetup(gamedatas);
-      console.log("Ending game setup");
     },
     _managerSetup: function (gamedatas) {
       // create the animation manager, and bind it to the `game.bgaAnimationsActive()` function
@@ -77,10 +73,11 @@ define([
         animationManager: this.animationManager,
         type: "card",
         getId: (card) => card.id,
+        isCardVisible: () => true,
         cardWidth: 128,
         cardHeight: 199,
         setupFrontDiv: (card, div) => {
-          div.dataset.type = card.type; // suit 1..4
+          div.dataset.type = card.type;
           this.addTooltipHtml(
             div.id,
             _(this.gamedatas.card_types[card.type_arg]["card_name"])
@@ -95,7 +92,6 @@ define([
         Object.keys(gamedatas.players_hands).forEach((key) => {
           if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
             var player = gamedatas.players_hands[key];
-            console.log(key, player, gamedatas);
             var name = player.name;
 
             extra_areas =
@@ -187,8 +183,6 @@ define([
       if (gamedatas.pool && Object.keys(gamedatas.pool).length > 0) {
         const deckCardsArray = Object.values(gamedatas.pool);
         this.poolStock.addCards(deckCardsArray);
-
-        console.log(this.poolStock);
       }
     },
     _deckSetup: function (gamedatas) {
@@ -231,8 +225,6 @@ define([
       Object.keys(gamedatas.players_hands).forEach((key) => {
         if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
           var player = gamedatas.players_hands[key];
-          console.log(key, player, gamedatas);
-          var name = player.name;
 
           //player.playertable
           //player.hand
@@ -246,14 +238,14 @@ define([
                 fanShaped: false,
               }
             ),
-            table: (this.tableStock = new BgaCards.LineStock(
+            table: new BgaCards.LineStock(
               this.cardsManager,
               document.getElementById(key + "_table"),
               {
                 fanShaped: false,
                 sort: false,
               }
-            )),
+            ),
           };
 
           // Display deck cards if they exist
@@ -346,7 +338,6 @@ define([
         cardsManager: this.cardsManager,
         animationManager: this.animationManager,
       };
-      console.log(debugData);
       window.linko = debugData;
     },
 
@@ -357,8 +348,6 @@ define([
     //                  You can use this method to perform some user interface changes at this moment.
     //
     onEnteringState: function (stateName, args) {
-      console.log("Entering state: " + stateName, args);
-
       switch (stateName) {
         /* Example:
             
@@ -379,8 +368,6 @@ define([
     //                 You can use this method to perform some user interface changes at this moment.
     //
     onLeavingState: function (stateName) {
-      console.log("Leaving state: " + stateName);
-
       switch (stateName) {
         /* Example:
             
@@ -401,7 +388,6 @@ define([
     //                        action status bar (ie: the HTML links in the status bar).
     //
     onUpdateActionButtons: function (stateName, args) {
-      console.log("onUpdateActionButtons: " + stateName, args);
       if (!this.isCurrentPlayerActive()) {
         return;
       }
@@ -423,45 +409,41 @@ define([
 
             this.statusBar.addActionButton(number, () => {
               //next we need to find out how many cards
+              if (number == "X") {
+                number = "14";
+              }
               this.statusBar.removeActionButtons();
-              const handWithNumber = Object.values(args.hand)
+              const hand = Object.values(args.hand)
                 .sort((a, b) => a.type - b.type)
                 .filter(
                   (card, _index, _arr) =>
                     card.type == number || card.type == "14"
                 );
-              console.log("test", handWithNumber);
 
               // Separate and count cards
-              const numberCards = handWithNumber.filter(
-                (card) => card.type == number
-              );
-              const jokerCards = handWithNumber.filter(
-                (card) => card.type == "14"
-              );
-
-              // Generate options
-              const options = [];
-
-              // For each possible number of number cards (1 to all)
-              for (
-                let numCount = 1;
-                numCount <= numberCards.length;
-                numCount++
-              ) {
-                // For each possible number of joker cards (0 to all)
-                for (
-                  let jokerCount = 0;
-                  jokerCount <= jokerCards.length;
-                  jokerCount++
-                ) {
-                  options.push({ numCount, jokerCount });
-                }
-              }
+              const numberCards = hand.filter((card) => card.type == number);
+              const jokerCards = hand.filter((card) => card.type == "14");
+              const counts = {
+                numbers: numberCards.length,
+                jokers: number == "14" ? 0 : jokerCards.length,
+              };
 
               this.statusBar.addActionButton("← Back", () =>
                 this.onUpdateActionButtons(stateName, args)
               );
+
+              // Generate options
+              const options = [];
+              for (let i = 1; i <= counts.numbers; i++) {
+                options.push({ numCount: i, jokerCount: 0 });
+              }
+              if (counts.jokers) {
+                for (let i = 1; i <= counts.numbers; i++) {
+                  for (let k = 1; k <= counts.jokers; k++) {
+                    options.push({ numCount: i, jokerCount: k });
+                  }
+                }
+              }
 
               // Create buttons
               options.forEach((option, index) => {
@@ -469,30 +451,49 @@ define([
                   option.jokerCount === 0
                     ? `Play ${
                         option.numCount == 1 ? "" : option.numCount + "x"
-                      }${number}`
+                      }${number == "14" ? "X" : number}`
                     : `Play ${
                         option.numCount == 1 ? "" : option.numCount + "x"
-                      }${number} & ${
+                      }${number == "14" ? "X" : number} & ${
                         option.jokerCount == 1 ? "" : option.jokerCount + "x"
                       }X`;
 
                 this.statusBar.addActionButton(description, () => {
-                  console.log(`Selected option: ${description}`);
+                  this.statusBar.removeActionButtons();
+                  this.statusBar.addActionButton("← Back", () =>
+                    this.onUpdateActionButtons(stateName, args)
+                  );
 
-                  // Simple card selection: take first X cards of each type
-                  const selectedCards = [
-                    ...numberCards.slice(0, option.numCount),
-                    ...jokerCards.slice(0, option.jokerCount),
-                  ];
+                  this.statusBar.addActionButton("Confirm", () => {
+                    // Simple card selection: take first X cards of each type
+                    const selectedCards = [
+                      ...numberCards.slice(0, option.numCount),
+                      ...jokerCards.slice(0, option.jokerCount),
+                    ];
+                    this.bgaPerformAction("actPlayCard", {
+                      selectedCards: JSON.stringify(selectedCards),
+                    }).then(() => {
+                      const deckCardsArray = Object.values(selectedCards);
+                      this.tableStock.addCards(deckCardsArray);
+                      deckCardsArray.forEach((card, index) => {
+                        this.handStock.cardRemoved(card, {
+                          autoUpdateCardNumber: true,
+                          fadeOut: true,
+                        });
+                      });
 
-                  console.log("Selected cards:", selectedCards);
+                      // What to do after the server call if it succeeded
+                      // (most of the time, nothing, as the game will react to notifs / change of state instead)
+                    });
+                  });
+                  /**/
+
+                  //this.onCardClick(selectedCards, stateName);
 
                   // Play cards
                   // selectedCards.forEach(card => this.onCardClick(card.id));
                 });
               });
-
-              //this.onCardClick(key);
             });
           });
           break;
@@ -525,15 +526,8 @@ define([
 
     // Example:
 
-    onCardClick: function (card_id) {
+    onCardClick: function (cards, stateName) {
       console.log("onCardClick", card_id);
-
-      this.bgaPerformAction("actPlayCard", {
-        card_id,
-      }).then(() => {
-        // What to do after the server call if it succeeded
-        // (most of the time, nothing, as the game will react to notifs / change of state instead)
-      });
     },
 
     setupNotifications: function () {
