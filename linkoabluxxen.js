@@ -93,14 +93,20 @@ define([
           if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
             var player = gamedatas.players_hands[key];
             var name = player.name;
-
+            var generate_rows = "";
+            for (var i = 50; i <= 1; i--) {
+              generate_rows =
+                generate_rows + `<div id="${key}_table_row_${i}"></div>`;
+            }
             extra_areas =
               extra_areas +
               `
               <div id="${key}_table_wrap" class="whiteblock table-area">
-                  <b id="${key}_table_label">${name} ${_("table")}</b>
-                  <div id="${key}_table"></div>
-                  <div id="${key}_table_counter" class="counter">${
+                <b id="${key}_table_label">${name} ${_("table")}</b>
+                <div id="${key}_table">
+                  ${generate_rows}
+                </div>
+                <div id="${key}_table_counter" class="counter">${
                 player.playertable ? Object.keys(player.playertable).length : 0
               }</div>
               </div>
@@ -114,6 +120,11 @@ define([
             `;
           }
         });
+      }
+
+      var generate_rows = "";
+      for (var i = 50; i <= 1; i--) {
+        generate_rows = generate_rows + `<div id="mytable_row_${i}"></div>`;
       }
 
       document.getElementById("game_play_area").insertAdjacentHTML(
@@ -145,7 +156,9 @@ define([
           </div>
           <div id="mytable_wrap" class="whiteblock table-area">
               <b id="mytable_label">${_("My table")}</b>
-              <div id="mytable"></div>
+              <div id="mytable">
+                ${generate_rows}
+              </div>
               <div id="table_counter" class="counter">${
                 gamedatas.current_player.playertable
                   ? Object.keys(gamedatas.current_player.playertable).length

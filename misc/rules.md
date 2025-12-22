@@ -11,7 +11,7 @@
 - 11 cards per player
 - Reveal 6 cards in pool section (public cards)
 - Draw deck
-- Discard pile 	
+- Discard pile
 ### 2 players
 - First player take "active player card"
 - 11 cards per player

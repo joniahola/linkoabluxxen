@@ -162,17 +162,29 @@ class Game extends \Bga\GameFramework\Table
         // Cards in player hand
         $result['card_types'] = self::$CARD_TYPES;
 
+        // get playertables data
+        for($i = 1; $i <= 50; $i++) {
+            $playertables[$i - 1] = $this->cards->getCardsInLocation('playertable' . $i, $current_player_id);
+        }
+
         $result['current_player'] = [
             'id' => $current_player_id,
             'hand' => $this->cards->getCardsInLocation('hand', $current_player_id),
-            'playertable' => $this->cards->getCardsInLocation('playertable', $current_player_id)
+            'playertables' => $playertables,
         ];
         $result['players_hands'] = [];
         foreach($result["players"] as $player_id => $player) {
+
+            $playertables = [];
+            // get playertables data
+            for($i = 1; $i <= 50; $i++) {
+                $playertables[$i - 1] = $this->cards->getCardsInLocation('playertable' . $i, $player_id);
+            }
+
             $result['players_hands'][$player_id] = [
                 'name' => $player["player_name"],
                 'hand' => $this->cards->getCardsInLocation('hand', $player_id),
-                'playertable' => $this->cards->getCardsInLocation('playertable', $player_id),
+                'playertables' => $playertables,
             ];
         }
         $result['pool'] = $this->cards->getCardsInLocation('pool');
