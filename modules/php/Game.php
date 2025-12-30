@@ -163,28 +163,30 @@ class Game extends \Bga\GameFramework\Table
         $result['card_types'] = self::$CARD_TYPES;
 
         // get playertables data
-        for($i = 1; $i <= 50; $i++) {
-            $playertables[$i - 1] = $this->cards->getCardsInLocation('playertable' . $i, $current_player_id);
+        for($i = 0; $i < 109; $i++) {
+            $playertables[$i] = $this->cards->getCardsInLocation('playertable' . $i, $current_player_id);
         }
 
         $result['current_player'] = [
             'id' => $current_player_id,
             'hand' => $this->cards->getCardsInLocation('hand', $current_player_id),
             'playertables' => $playertables,
+            'playertables_index' => $this->get_table_index($playertables)
         ];
         $result['players_hands'] = [];
         foreach($result["players"] as $player_id => $player) {
 
             $playertables = [];
             // get playertables data
-            for($i = 1; $i <= 50; $i++) {
-                $playertables[$i - 1] = $this->cards->getCardsInLocation('playertable' . $i, $player_id);
+            for($i = 0; $i < 109; $i++) {
+                $playertables[$i] = $this->cards->getCardsInLocation('playertable' . $i, $player_id);
             }
 
             $result['players_hands'][$player_id] = [
                 'name' => $player["player_name"],
                 'hand' => $this->cards->getCardsInLocation('hand', $player_id),
                 'playertables' => $playertables,
+                'playertables_index' => $this->get_table_index($playertables)
             ];
         }
         $result['pool'] = $this->cards->getCardsInLocation('pool');
@@ -192,6 +194,17 @@ class Game extends \Bga\GameFramework\Table
         $result['deck'] = $this->cards->getCardsInLocation('deck');
 
         return $result;
+    }
+
+    private function get_table_index($playertables) {
+        $index = 0;
+        foreach($playertables as $table) {
+            if(count($table) == 0) {
+                return $index;
+            }
+            $index++;
+        }
+        return $index;
     }
 
     /**

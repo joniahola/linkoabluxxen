@@ -94,7 +94,7 @@ define([
             var player = gamedatas.players_hands[key];
             var name = player.name;
             var generate_rows = "";
-            for (var i = 50; i <= 1; i--) {
+            for (var i = 108; i >= 0; i--) {
               generate_rows =
                 generate_rows + `<div id="${key}_table_row_${i}"></div>`;
             }
@@ -123,7 +123,7 @@ define([
       }
 
       var generate_rows = "";
-      for (var i = 50; i <= 1; i--) {
+      for (var i = 108; i >= 0; i--) {
         generate_rows = generate_rows + `<div id="mytable_row_${i}"></div>`;
       }
 
@@ -239,6 +239,22 @@ define([
         if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
           var player = gamedatas.players_hands[key];
 
+          //create tables:
+          //${key}_table_row_${i}
+          const tables = [];
+          for (let i = 0; i < 109; i++) {
+            tables.push(
+              new BgaCards.LineStock(
+                this.cardsManager,
+                document.getElementById(key + "_table_row_" + i),
+                {
+                  fanShaped: false,
+                  sort: false,
+                }
+              )
+            );
+          }
+
           //player.playertable
           //player.hand
           //${key}_myhand
@@ -251,15 +267,9 @@ define([
                 fanShaped: false,
               }
             ),
-            table: new BgaCards.LineStock(
-              this.cardsManager,
-              document.getElementById(key + "_table"),
-              {
-                fanShaped: false,
-                sort: false,
-              }
-            ),
+            tables: tables,
           };
+          console.log(stock);
 
           // Display deck cards if they exist
           if (player.hand && Object.keys(player.hand).length > 0) {
@@ -292,15 +302,21 @@ define([
       );
       this.handStock.setSelectionMode("multiple");
 
-      this.tableStock = new BgaCards.LineStock(
-        this.cardsManager,
-        document.getElementById("mytable"),
-        {
-          fanShaped: false,
-          sort: false,
-        }
-      );
+      const tables = [];
+      for (let i = 0; i < 109; i++) {
+        tables.push(
+          new BgaCards.LineStock(
+            this.cardsManager,
+            document.getElementById("mytable_row_" + i),
+            {
+              fanShaped: false,
+              sort: false,
+            }
+          )
+        );
+      }
 
+      this.tableStocks = tables;
       // Display deck cards if they exist
       if (
         gamedatas.current_player.hand &&
@@ -413,6 +429,7 @@ define([
               (card, index, arr) =>
                 index === 0 || card.type !== arr[index - 1].type
             );
+          //clear action buttons
           this.statusBar.removeActionButtons();
           Object.keys(hand).forEach((key) => {
             let number = hand[key].type;
@@ -450,6 +467,7 @@ define([
               for (let i = 1; i <= counts.numbers; i++) {
                 options.push({ numCount: i, jokerCount: 0 });
               }
+              // add jokers also
               if (counts.jokers) {
                 for (let i = 1; i <= counts.numbers; i++) {
                   for (let k = 1; k <= counts.jokers; k++) {
@@ -487,13 +505,23 @@ define([
                       selectedCards: JSON.stringify(selectedCards),
                     }).then(() => {
                       const deckCardsArray = Object.values(selectedCards);
-                      this.tableStock.addCards(deckCardsArray);
-                      deckCardsArray.forEach((card, index) => {
-                        this.handStock.cardRemoved(card, {
-                          autoUpdateCardNumber: true,
-                          fadeOut: true,
+
+                      let found = false;
+                      for (let i = 0; i < this.tableStocks.length; i++) {
+                        if (this.tableStocks[i].isEmpty()) {
+                          this.tableStocks[i].addCards(deckCardsArray);
+                          found = true;
+                          break;
+                        }
+                      }
+                      if (found) {
+                        deckCardsArray.forEach((card, index) => {
+                          this.handStock.cardRemoved(card, {
+                            autoUpdateCardNumber: true,
+                            fadeOut: true,
+                          });
                         });
-                      });
+                      }
 
                       // What to do after the server call if it succeeded
                       // (most of the time, nothing, as the game will react to notifs / change of state instead)
