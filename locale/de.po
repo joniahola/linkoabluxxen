@@ -1,0 +1,89 @@
+# German translations for LinkoAbluxxen
+msgid ""
+msgstr ""
+"Language: de\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Pool"
+msgstr "Pool"
+
+msgid "My hand"
+msgstr "Meine Hand"
+
+msgid "Discard"
+msgstr "Ablage"
+
+msgid "Table"
+msgstr "Tisch"
+
+msgid "Play"
+msgstr "Spielen"
+
+msgid "Clear"
+msgstr "Zurücksetzen"
+
+msgid "Pick up"
+msgstr "Aufnehmen"
+
+msgid "Discard and draw"
+msgstr "Ablegen und ziehen"
+
+msgid "Draw from deck"
+msgstr "Vom Stapel ziehen"
+
+msgid "Take"
+msgstr "Nehmen"
+
+msgid "Skip"
+msgstr "Überspringen"
+
+msgid "All cards must be the same number — Clear selection"
+msgstr "Alle Karten müssen die gleiche Zahl haben — Auswahl löschen"
+
+msgid "cards in deck"
+msgstr "Karten im Stapel"
+
+msgid "${actplayer} must play card(s)"
+msgstr "${actplayer} muss Karte(n) spielen"
+
+msgid "${you} must play card(s)"
+msgstr "${you} muss Karte(n) spielen"
+
+msgid "${player_name} plays: ${card_list}"
+msgstr "${player_name} spielt: ${card_list}"
+
+msgid "${actplayer} must decide: take or skip snatched cards"
+msgstr "${actplayer} muss entscheiden: Karten nehmen oder überspringen"
+
+msgid "${you} can take the snatched cards"
+msgstr "${you} kann die gestohlenen Karten nehmen"
+
+msgid "${player_name} takes cards from ${robbed_name}"
+msgstr "${player_name} nimmt Karten von ${robbed_name}"
+
+msgid "${player_name} declines the snatched cards"
+msgstr "${player_name} lehnt die gestohlenen Karten ab"
+
+msgid "${actplayer} must decide: pick up or discard snatched cards"
+msgstr "${actplayer} muss entscheiden: Karten aufnehmen oder ablegen"
+
+msgid "${you} must decide: pick up or discard your snatched cards"
+msgstr "${you} muss entscheiden: Karten aufnehmen oder ablegen"
+
+msgid "${player_name} picks up their cards"
+msgstr "${player_name} nimmt die Karten auf"
+
+msgid "${player_name} discards their cards"
+msgstr "${player_name} legt die Karten ab"
+
+msgid "${actplayer} must draw replacement card(s)"
+msgstr "${actplayer} muss Ersatzkarte(n) ziehen"
+
+msgid "${you} must draw ${draw_count} more card(s) — click pool or deck"
+msgstr "${you} muss noch ${draw_count} Karte(n) ziehen — Pool oder Stapel anklicken"
+
+msgid "${player_name} draws a card from the deck"
+msgstr "${player_name} zieht eine Karte vom Stapel"
+
+msgid "${player_name} draws ${card_name} from the pool"
+msgstr "${player_name} zieht ${card_name} aus dem Pool"

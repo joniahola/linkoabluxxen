@@ -1,0 +1,89 @@
+# Finnish translations for LinkoAbluxxen
+msgid ""
+msgstr ""
+"Language: fi\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "Pool"
+msgstr "Pooli"
+
+msgid "My hand"
+msgstr "Käteni"
+
+msgid "Discard"
+msgstr "Poistetut"
+
+msgid "Table"
+msgstr "Pöytä"
+
+msgid "Play"
+msgstr "Pelaa"
+
+msgid "Clear"
+msgstr "Tyhjennä"
+
+msgid "Pick up"
+msgstr "Ota"
+
+msgid "Discard and draw"
+msgstr "Hylkää ja nosta"
+
+msgid "Draw from deck"
+msgstr "Nosta pakasta"
+
+msgid "Take"
+msgstr "Ota"
+
+msgid "Skip"
+msgstr "Ohita"
+
+msgid "All cards must be the same number — Clear selection"
+msgstr "Kaikkien korttien täytyy olla samaa numeroa — Tyhjennä valinta"
+
+msgid "cards in deck"
+msgstr "korttia pakassa"
+
+msgid "${actplayer} must play card(s)"
+msgstr "${actplayer} täytyy pelata kortti(ja)"
+
+msgid "${you} must play card(s)"
+msgstr "${you} täytyy pelata kortti(ja)"
+
+msgid "${player_name} plays: ${card_list}"
+msgstr "${player_name} pelaa: ${card_list}"
+
+msgid "${actplayer} must decide: take or skip snatched cards"
+msgstr "${actplayer} täytyy päättää: ota tai ohita napatut kortit"
+
+msgid "${you} can take the snatched cards"
+msgstr "${you} voit ottaa napatut kortit"
+
+msgid "${player_name} takes cards from ${robbed_name}"
+msgstr "${player_name} ottaa kortit pelaajalta ${robbed_name}"
+
+msgid "${player_name} declines the snatched cards"
+msgstr "${player_name} ohittaa napatut kortit"
+
+msgid "${actplayer} must decide: pick up or discard snatched cards"
+msgstr "${actplayer} täytyy päättää: ota tai hylkää napatut kortit"
+
+msgid "${you} must decide: pick up or discard your snatched cards"
+msgstr "${you} täytyy päättää: ota tai hylkää napatut kortit"
+
+msgid "${player_name} picks up their cards"
+msgstr "${player_name} ottaa korttinsa"
+
+msgid "${player_name} discards their cards"
+msgstr "${player_name} hylkää korttinsa"
+
+msgid "${actplayer} must draw replacement card(s)"
+msgstr "${actplayer} täytyy nostaa korvaava(t) kortti(a)"
+
+msgid "${you} must draw ${draw_count} more card(s) — click pool or deck"
+msgstr "${you} täytyy nostaa ${draw_count} kortti(a) lisää — klikkaa poolia tai pakkaa"
+
+msgid "${player_name} draws a card from the deck"
+msgstr "${player_name} nostaa kortin pakasta"
+
+msgid "${player_name} draws ${card_name} from the pool"
+msgstr "${player_name} nostaa ${card_name} poolilta"
