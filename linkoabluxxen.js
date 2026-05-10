@@ -14,8 +14,8 @@ define([
   return declare("bgagame.linkoabluxxen", ebg.core.gamegui, {
     constructor: function () {
       this.tableStocks = [];      // current player's per-row stocks
-      this.othersStocks = {};     // { playerId: { hand, tables[] } }
-      this._hiddenCards = new Set(); // card IDs that should show as face-down (other players' hands)
+      this.othersStocks = {};     // { playerId: { tables[] } }
+      this._playerStats = {};     // { playerId: { hand: N, table: N } }
     },
 
     setup: function (gamedatas) {
@@ -47,7 +47,7 @@ define([
         animationManager: this.animationManager,
         type: "card",
         getId: (card) => card.id,
-        isCardVisible: (card) => !this._hiddenCards.has(parseInt(card.id)),
+        isCardVisible: () => true,
         cardWidth: 128,
         cardHeight: 199,
         setupFrontDiv: (card, div) => {
@@ -56,9 +56,6 @@ define([
             div.id,
             _(this.gamedatas.card_types[card.type_arg]?.card_name ?? card.type_arg)
           );
-        },
-        setupBackDiv: (_card, div) => {
-          div.classList.add("card-back-face");
         },
       });
     },
@@ -80,12 +77,8 @@ define([
           return `
             <div id="${id}_table_wrap" class="whiteblock table-area">
               <b>${player.name} ${_("table")}</b>
+              <span id="${id}_hand_count_badge" class="hand-count-badge"></span>
               <div id="${id}_table">${this._makeTableRows(id + "_table")}</div>
-            </div>
-            <div id="${id}_myhand_wrap" class="whiteblock hand-area">
-              <b>${player.name} ${_("hand")}</b>
-              <div id="${id}_myhand"></div>
-              <span id="${id}_hand_counter_el"></span>
             </div>
           `;
         })
@@ -94,17 +87,8 @@ define([
       document.getElementById("game_play_area").insertAdjacentHTML(
         "beforeend",
         `
-        <div id="deck_area" class="whiteblock deck-area">
-          <b>${_("Deck")}</b>
-          <div id="deck" class="card-stock"></div>
-          <span id="deck_counter_el">${gamedatas.deck_count ?? 0}</span>
-        </div>
-        <div id="discard_area" class="whiteblock discard-area">
-          <b>${_("Discard")}</b>
-          <div id="discard" class="card-stock"></div>
-        </div>
         <div id="pool_area" class="whiteblock pool-area">
-          <b>${_("Pool")}</b>
+          <b>${_("Pool")}</b> <span id="deck_counter_el" class="deck-count-label">(${gamedatas.deck_count ?? 0} ${_("cards in deck")})</span>
           <div id="pool" class="pool-cards"></div>
         </div>
         <div id="mytable_wrap" class="whiteblock table-area">
@@ -116,6 +100,10 @@ define([
           <div id="myhand"></div>
         </div>
         ${otherAreas}
+        <div id="discard_area" class="whiteblock discard-area">
+          <b>${_("Discard")}</b>
+          <div id="discard" class="card-stock"></div>
+        </div>
         `
       );
 
@@ -188,7 +176,7 @@ define([
 
         const player = gamedatas.players_hands[id];
 
-        // Per-row table stocks
+        // Per-row table stocks only — no hand stock (hands are hidden)
         const tables = [];
         for (let i = 0; i < 109; i++) {
           tables.push(
@@ -200,19 +188,7 @@ define([
           );
         }
 
-        // Hand stock (shows card backs — isCardVisible can be overridden per-stock if needed)
-        const handStock = new BgaCards.LineStock(
-          this.cardsManager,
-          document.getElementById(id + "_myhand"),
-          { sort: (a, b) => a.type - b.type, fanShaped: false }
-        );
-
-        this.othersStocks[id] = { hand: handStock, tables };
-
-        // Populate hand — mark as hidden so they show as card backs
-        const hand = player.hand ? Object.values(player.hand) : [];
-        hand.forEach((c) => this._hiddenCards.add(parseInt(c.id)));
-        if (hand.length > 0) handStock.addCards(hand);
+        this.othersStocks[id] = { tables };
 
         // Populate table rows
         const playertables = player.playertables || [];
@@ -225,38 +201,69 @@ define([
     },
 
     _playerBoardsSetup: function (gamedatas) {
+      const currentId = parseInt(gamedatas.current_player.id);
+
       Object.values(gamedatas.players).forEach((player) => {
+        const pid = parseInt(player.id);
+        const playerData = gamedatas.players_hands[pid] ?? {};
+
+        // Count initial hand cards
+        const handCount = Object.keys(playerData.hand ?? {}).length;
+
+        // Count initial stacked cards across all rows
+        let tableCount = 0;
+        (playerData.playertables || []).forEach((row) => {
+          tableCount += row?.length ?? 0;
+        });
+
+        this._playerStats[pid] = { hand: handCount, table: tableCount };
+
+        // Add hand counter to player panel
         this.getPlayerPanelElement(player.id).insertAdjacentHTML(
           "beforeend",
-          `<span id="hand-count-${player.id}"></span> cards`
+          `<div><span id="hand-count-${pid}"></span> cards in hand</div>`
         );
-        const handCount = gamedatas.players_hands[player.id]
-          ? Object.keys(gamedatas.players_hands[player.id].hand ?? {}).length
-          : 0;
         const ctr = new ebg.counter();
-        ctr.create(`hand-count-${player.id}`, {
-          value: handCount,
-          playerCounter: "cards",
-          playerId: player.id,
-        });
+        ctr.create(`hand-count-${pid}`);
+        ctr.setValue(handCount);
+        this[`_handCtr_${pid}`] = ctr;
+
+        // Set initial live score
+        this._updateScore(pid);
+
+        // Update hand count badge in table header (other players only)
+        if (pid !== currentId) {
+          this._updateHandBadge(pid);
+        }
       });
+    },
+
+    _updateScore: function (playerId) {
+      const stats = this._playerStats[playerId];
+      if (!stats) return;
+
+      const score = stats.table - stats.hand;
+      if (this.scoreCtrl && this.scoreCtrl[playerId]) {
+        this.scoreCtrl[playerId].setValue(score);
+      }
+
+      const ctr = this[`_handCtr_${playerId}`];
+      if (ctr) ctr.setValue(stats.hand);
+
+      this._updateHandBadge(playerId);
+    },
+
+    _updateHandBadge: function (playerId) {
+      const stats = this._playerStats[playerId];
+      const badge = document.getElementById(playerId + "_hand_count_badge");
+      if (badge && stats) {
+        badge.textContent = `(${stats.hand} cards in hand)`;
+      }
     },
 
     // -------------------------------------------------------------------------
     // Stock lookup helpers
     // -------------------------------------------------------------------------
-
-    _isOtherPlayer: function (playerId) {
-      return parseInt(playerId) !== parseInt(this.gamedatas.current_player.id);
-    },
-
-    _hideCards: function (cards) {
-      cards.forEach((c) => this._hiddenCards.add(parseInt(c.id ?? c)));
-    },
-
-    _showCards: function (cards) {
-      cards.forEach((c) => this._hiddenCards.delete(parseInt(c.id ?? c)));
-    },
 
     _getTableStock: function (playerId, rowIdx) {
       const currentId = parseInt(this.gamedatas.current_player.id);
@@ -269,7 +276,7 @@ define([
     _getHandStock: function (playerId) {
       const currentId = parseInt(this.gamedatas.current_player.id);
       if (playerId === currentId) return this.handStock;
-      return this.othersStocks[playerId]?.hand ?? null;
+      return null; // other players' hands are not shown
     },
 
     // -------------------------------------------------------------------------
@@ -456,12 +463,16 @@ define([
       const pid        = parseInt(player_id);
       const tableStock = this._getTableStock(pid, row_idx);
 
-      // Cards moving to table become public — remove from hidden set so they show face-up
-      if (this._isOtherPlayer(pid)) this._showCards(cards);
+      if (this._playerStats[pid]) {
+        this._playerStats[pid].hand -= cards.length;
+        this._playerStats[pid].table += cards.length;
+      }
 
       if (tableStock) {
         await tableStock.addCards(cards);
       }
+
+      this._updateScore(pid);
     },
 
     /** Active player takes snatched cards into their hand */
@@ -473,12 +484,19 @@ define([
       const tableStock = this._getTableStock(robbedId, row_idx);
       const handStock  = this._getHandStock(takerId);
 
-      // Cards going into another player's hand become hidden
-      if (this._isOtherPlayer(takerId)) this._hideCards(cards);
+      if (this._playerStats[takerId]) this._playerStats[takerId].hand += cards.length;
+      if (this._playerStats[robbedId]) this._playerStats[robbedId].table -= cards.length;
 
-      if (tableStock && handStock) {
-        await handStock.addCards(cards);
+      if (tableStock) {
+        if (handStock) {
+          await handStock.addCards(cards);
+        } else {
+          tableStock.removeCards(cards);
+        }
       }
+
+      this._updateScore(takerId);
+      this._updateScore(robbedId);
     },
 
     /** Active player declines — just clear the highlight */
@@ -497,14 +515,22 @@ define([
       const tableStock = this._getTableStock(pid, row_idx);
       const handStock  = this._getHandStock(pid);
 
-      if (tableStock && handStock) {
+      if (tableStock) {
         const cards = tableStock.getCards().filter((c) => card_ids.includes(parseInt(c.id)));
         if (cards.length > 0) {
-          // Cards returning to another player's hand become hidden again
-          if (this._isOtherPlayer(pid)) this._hideCards(cards);
-          await handStock.addCards(cards);
+          if (this._playerStats[pid]) {
+            this._playerStats[pid].table -= cards.length;
+            this._playerStats[pid].hand += cards.length;
+          }
+          if (handStock) {
+            await handStock.addCards(cards);
+          } else {
+            tableStock.removeCards(cards);
+          }
         }
       }
+
+      this._updateScore(pid);
     },
 
     /** Robbed player discards their snatched cards */
@@ -517,33 +543,40 @@ define([
       if (tableStock) {
         const cards = tableStock.getCards().filter((c) => card_ids.includes(parseInt(c.id)));
         if (cards.length > 0) {
+          if (this._playerStats[pid]) this._playerStats[pid].table -= cards.length;
           await this.discardStock.addCards(cards);
         }
       }
+
+      this._updateScore(pid);
     },
 
-    /** Player draws a card (public — from pool, or face-down from deck) */
+    /** Player draws a card (public — from pool, or face-down from deck for others) */
     notif_cardDrawn: async function (notif) {
       const { player_id, from_pool, card } = this._args(notif);
       if (player_id == null) return;
       const pid       = parseInt(player_id);
       const handStock = this._getHandStock(pid);
 
-      if (!handStock) return;
-
       if (from_pool && card) {
-        // Pool card going into another player's hand becomes hidden
-        if (this._isOtherPlayer(pid)) this._hideCards([card]);
-        await handStock.addCards([card]);
+        if (this._playerStats[pid]) this._playerStats[pid].hand += 1;
+        if (handStock) {
+          await handStock.addCards([card]);
+        }
+        // If no hand stock (other player), card just disappears from pool naturally
+        this._updateScore(pid);
       }
-      // deck draw is shown via notif_cardDrawnPrivate for the drawing player only
+      // deck draw for others: no card object sent publicly, so nothing to animate
     },
 
     /** Private notification for the player who drew from deck — reveals their card */
     notif_cardDrawnPrivate: async function (notif) {
       const { card } = this._args(notif);
       if (card) {
-        this.handStock.addCard(card);
+        const pid = parseInt(this.gamedatas.current_player.id);
+        if (this._playerStats[pid]) this._playerStats[pid].hand += 1;
+        await this.handStock.addCard(card);
+        this._updateScore(pid);
       }
     },
 
@@ -555,9 +588,7 @@ define([
       }
     },
 
-    /** Final scores (no UI change needed — BGA handles scoreboard) */
-    notif_finalScore: async function (notif) {
-      // BGA framework updates player_score automatically via the playerScore counter
-    },
+    /** Final scores (BGA framework updates scoreboard automatically) */
+    notif_finalScore: async function (notif) {},
   });
 });
