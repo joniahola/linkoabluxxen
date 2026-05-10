@@ -15,6 +15,7 @@ define([
     constructor: function () {
       this.tableStocks = [];      // current player's per-row stocks
       this.othersStocks = {};     // { playerId: { hand, tables[] } }
+      this._hiddenCards = new Set(); // card IDs that should show as face-down (other players' hands)
     },
 
     setup: function (gamedatas) {
@@ -46,7 +47,7 @@ define([
         animationManager: this.animationManager,
         type: "card",
         getId: (card) => card.id,
-        isCardVisible: () => true,
+        isCardVisible: (card) => !this._hiddenCards.has(parseInt(card.id)),
         cardWidth: 128,
         cardHeight: 199,
         setupFrontDiv: (card, div) => {
@@ -55,6 +56,9 @@ define([
             div.id,
             _(this.gamedatas.card_types[card.type_arg]?.card_name ?? card.type_arg)
           );
+        },
+        setupBackDiv: (_card, div) => {
+          div.classList.add("card-back-face");
         },
       });
     },
@@ -100,7 +104,7 @@ define([
           <div id="discard" class="card-stock"></div>
         </div>
         <div id="pool_area" class="whiteblock pool-area">
-          <b>${_("Card row")}</b>
+          <b>${_("Pool")}</b>
           <div id="pool" class="pool-cards"></div>
         </div>
         <div id="mytable_wrap" class="whiteblock table-area">
@@ -205,8 +209,9 @@ define([
 
         this.othersStocks[id] = { hand: handStock, tables };
 
-        // Populate hand
+        // Populate hand — mark as hidden so they show as card backs
         const hand = player.hand ? Object.values(player.hand) : [];
+        hand.forEach((c) => this._hiddenCards.add(parseInt(c.id)));
         if (hand.length > 0) handStock.addCards(hand);
 
         // Populate table rows
@@ -240,6 +245,18 @@ define([
     // -------------------------------------------------------------------------
     // Stock lookup helpers
     // -------------------------------------------------------------------------
+
+    _isOtherPlayer: function (playerId) {
+      return parseInt(playerId) !== parseInt(this.gamedatas.current_player.id);
+    },
+
+    _hideCards: function (cards) {
+      cards.forEach((c) => this._hiddenCards.add(parseInt(c.id ?? c)));
+    },
+
+    _showCards: function (cards) {
+      cards.forEach((c) => this._hiddenCards.delete(parseInt(c.id ?? c)));
+    },
 
     _getTableStock: function (playerId, rowIdx) {
       const currentId = parseInt(this.gamedatas.current_player.id);
@@ -437,10 +454,12 @@ define([
       const { player_id, cards, row_idx } = this._args(notif);
       if (player_id == null) return;
       const pid        = parseInt(player_id);
-      const handStock  = this._getHandStock(pid);
       const tableStock = this._getTableStock(pid, row_idx);
 
-      if (handStock && tableStock) {
+      // Cards moving to table become public — remove from hidden set so they show face-up
+      if (this._isOtherPlayer(pid)) this._showCards(cards);
+
+      if (tableStock) {
         await tableStock.addCards(cards);
       }
     },
@@ -453,6 +472,9 @@ define([
       const robbedId   = parseInt(robbed_id);
       const tableStock = this._getTableStock(robbedId, row_idx);
       const handStock  = this._getHandStock(takerId);
+
+      // Cards going into another player's hand become hidden
+      if (this._isOtherPlayer(takerId)) this._hideCards(cards);
 
       if (tableStock && handStock) {
         await handStock.addCards(cards);
@@ -476,9 +498,10 @@ define([
       const handStock  = this._getHandStock(pid);
 
       if (tableStock && handStock) {
-        const cards = tableStock.getCards().filter((c) => card_ids.includes(c.id));
+        const cards = tableStock.getCards().filter((c) => card_ids.includes(parseInt(c.id)));
         if (cards.length > 0) {
-          tableStock.removeCards(cards);
+          // Cards returning to another player's hand become hidden again
+          if (this._isOtherPlayer(pid)) this._hideCards(cards);
           await handStock.addCards(cards);
         }
       }
@@ -492,9 +515,8 @@ define([
       const tableStock = this._getTableStock(pid, row_idx);
 
       if (tableStock) {
-        const cards = tableStock.getCards().filter((c) => card_ids.includes(c.id));
+        const cards = tableStock.getCards().filter((c) => card_ids.includes(parseInt(c.id)));
         if (cards.length > 0) {
-          tableStock.removeCards(cards);
           await this.discardStock.addCards(cards);
         }
       }
@@ -510,6 +532,8 @@ define([
       if (!handStock) return;
 
       if (from_pool && card) {
+        // Pool card going into another player's hand becomes hidden
+        if (this._isOtherPlayer(pid)) this._hideCards([card]);
         await handStock.addCards([card]);
       }
       // deck draw is shown via notif_cardDrawnPrivate for the drawing player only
