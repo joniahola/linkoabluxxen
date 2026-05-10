@@ -228,6 +228,14 @@
   overflow: visible;
   width: auto !important;
   height: auto !important;
+  position: relative;
+}
+
+/* Vertical row compaction — same 75% overlap as horizontal card compaction.
+   A row with cards that follows another row with cards overlaps it by 150 px (199 * 0.75). */
+[id^="mytable_row_"]:has(.bga-cards_card) ~ [id^="mytable_row_"]:has(.bga-cards_card),
+[id*="_table_row_"]:has(.bga-cards_card) ~ [id*="_table_row_"]:has(.bga-cards_card) {
+  margin-top: -150px;
 }
 
 #discard,
@@ -253,22 +261,16 @@
   margin-left: 0;
 }
 
-/* ── Combined circular table ── */
-.combined-table-area {
-  overflow: visible;
-  padding: 0;
-}
-
+/* ── Combined player table — stacked layout for all screen sizes ── */
 .combined-table-inner {
-  position: relative;
-  width: 100%;
-  height: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 8px;
 }
 
 .combined-player {
-  position: absolute;
-  max-width: 340px;
-  text-align: center;
+  width: 100%;
 }
 
 .combined-player-label {
@@ -276,104 +278,9 @@
   white-space: nowrap;
 }
 
-/* ── Position variants (translate only — rotation applied to cards only below) ── */
-
-/* 2p: other player / 4p: next-next */
-.cpos-top-center {
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-/* 5p: next-next (slightly left of center) */
-.cpos-top-left {
-  top: 10px;
-  left: 35%;
-  transform: translateX(-50%);
-}
-
-/* 5p: next-next-next (slightly right of center) */
-.cpos-top-right {
-  top: 10px;
-  left: 65%;
-  transform: translateX(-50%);
-}
-
-/* 3p/4p/5p: next player */
-.cpos-left-center {
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* 3p/4p/5p: previous player */
-.cpos-right-center {
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* current player — always bottom center */
-.cpos-bottom-center {
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-/* ── Card-only rotations (label stays upright) ── */
-.cpos-top-center > div:last-child,
-.cpos-top-left > div:last-child,
-.cpos-top-right > div:last-child {
-  transform: rotate(180deg);
-}
-
-.cpos-left-center > div:last-child {
-  transform: rotate(90deg);
-}
-
-.cpos-right-center > div:last-child {
-  transform: rotate(-90deg);
-}
-
-/* ── Responsive: stack all player tables vertically on narrow screens ── */
-@media (max-width: 1279px) {
-  .combined-table-inner {
-    height: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 8px;
-  }
-
-  .combined-player,
-  .cpos-bottom-center,
-  .cpos-top-center,
-  .cpos-top-left,
-  .cpos-top-right,
-  .cpos-left-center,
-  .cpos-right-center {
-    position: static;
-    top: auto;
-    bottom: auto;
-    left: auto;
-    right: auto;
-    transform: none;
-    max-width: 100%;
-    text-align: left;
-  }
-
-  .cpos-top-center > div:last-child,
-  .cpos-top-left > div:last-child,
-  .cpos-top-right > div:last-child,
-  .cpos-left-center > div:last-child,
-  .cpos-right-center > div:last-child {
-    transform: none;
-  }
-
-  /* Current player always at the bottom so opponents read top→bottom in turn order */
-  .combined-player--me {
-    order: 99;
-  }
+/* Current player always last (bottom) so opponents read top→bottom in turn order */
+.combined-player--me {
+  order: 99;
 }
 
 .hand-count-badge {

@@ -79,25 +79,16 @@ define([
     _generatePlayAreasSetup: function (gamedatas) {
       const currentId = parseInt(gamedatas.current_player.id);
       const ordered   = this._getPlayersInTurnOrder(gamedatas);
-      const n         = ordered.length;
-
-      const positionsByCount = {
-        2: ["bottom-center", "top-center"],
-        3: ["bottom-center", "left-center", "right-center"],
-        4: ["bottom-center", "left-center", "top-center", "right-center"],
-        5: ["bottom-center", "left-center", "top-left", "top-right", "right-center"],
-      };
-      const positions = positionsByCount[n] || positionsByCount[4];
 
       const playerSections = ordered
-        .map((player, i) => {
-          const pid   = parseInt(player.id);
-          const isMe  = pid === currentId;
+        .map((player) => {
+          const pid    = parseInt(player.id);
+          const isMe   = pid === currentId;
           const prefix = isMe ? "mytable" : pid + "_table";
           const badge  = isMe ? "" : `<span id="${pid}_hand_count_badge" class="hand-count-badge"></span>`;
           const label  = isMe ? _("My table") : player.name;
           return `
-            <div id="cplayer_${pid}" class="combined-player cpos-${positions[i]}${isMe ? " combined-player--me" : ""}">
+            <div id="cplayer_${pid}" class="combined-player${isMe ? " combined-player--me" : ""}">
               <div class="combined-player-label"><b>${label}</b>${badge}</div>
               <div id="${prefix}">${this._makeTableRows(prefix)}</div>
             </div>
@@ -301,22 +292,24 @@ define([
       if (!tableEl) return;
       const rows = Array.from(tableEl.children);
 
-      let seenCards = false;
+      // z-index: higher row index = more on top (most recent play stays visible)
       rows.forEach((row) => {
-        const hasCards = row.querySelector('.bga-cards_card') !== null;
-        const rowIndex = parseInt(row.id.split("_").pop());
-        row.style.position = "relative";
-        row.style.zIndex = rowIndex;
-        row.style.marginTop = hasCards && seenCards ? "-150px" : "0";
-        if (hasCards) seenCards = true;
+        row.style.zIndex = parseInt(row.id.split("_").pop());
       });
 
-      // Topmost non-empty row → opacity 1, each row below fades by 0.2 (min 0.2)
+      // Topmost non-empty row → opacity 1, each row below fades (min 0.05)
       rows
         .filter((row) => row.querySelector('.bga-cards_card') !== null)
         .forEach((row, i) => {
           row.style.opacity = Math.max(0.05, 1 - 0.35 * i);
         });
+    },
+
+    _cleanRowEl: function (pid, rowIdx) {
+      const currentId = parseInt(this.gamedatas.current_player.id);
+      const prefix    = pid === currentId ? "mytable" : pid + "_table";
+      const rowEl     = document.getElementById(prefix + "_row_" + rowIdx);
+      if (rowEl) rowEl.querySelectorAll(".bga-cards_card").forEach((el) => el.remove());
     },
 
     _refreshAll: function () {
@@ -557,6 +550,7 @@ define([
           tableStock.removeCards(cards);
         }
       }
+      this._cleanRowEl(robbedId, row_idx);
       this._refreshAll();
     },
 
@@ -591,6 +585,7 @@ define([
           }
         }
       }
+      this._cleanRowEl(pid, row_idx);
       this._refreshAll();
     },
 
@@ -608,6 +603,7 @@ define([
           await this.discardStock.addCards(cards);
         }
       }
+      this._cleanRowEl(pid, row_idx);
       this._refreshAll();
     },
 
