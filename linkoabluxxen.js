@@ -97,7 +97,7 @@ define([
           const badge  = isMe ? "" : `<span id="${pid}_hand_count_badge" class="hand-count-badge"></span>`;
           const label  = isMe ? _("My table") : player.name;
           return `
-            <div id="cplayer_${pid}" class="combined-player cpos-${positions[i]}">
+            <div id="cplayer_${pid}" class="combined-player cpos-${positions[i]}${isMe ? " combined-player--me" : ""}">
               <div class="combined-player-label"><b>${label}</b>${badge}</div>
               <div id="${prefix}">${this._makeTableRows(prefix)}</div>
             </div>
@@ -299,14 +299,35 @@ define([
 
     _compactTableRows: function (tableEl) {
       if (!tableEl) return;
+      const rows = Array.from(tableEl.children);
+
       let seenCards = false;
-      Array.from(tableEl.children).forEach((row) => {
-        const hasCards = row.children.length > 0;
+      rows.forEach((row) => {
+        const hasCards = row.querySelector('.bga-cards_card') !== null;
         const rowIndex = parseInt(row.id.split("_").pop());
         row.style.position = "relative";
         row.style.zIndex = rowIndex;
         row.style.marginTop = hasCards && seenCards ? "-150px" : "0";
         if (hasCards) seenCards = true;
+      });
+
+      // Topmost non-empty row → opacity 1, each row below fades by 0.2 (min 0.2)
+      rows
+        .filter((row) => row.querySelector('.bga-cards_card') !== null)
+        .forEach((row, i) => {
+          row.style.opacity = Math.max(0.05, 1 - 0.35 * i);
+        });
+    },
+
+    _refreshAll: function () {
+      // Re-compact every player's table
+      this._compactTableRows(document.getElementById("mytable"));
+      Object.keys(this.othersStocks).forEach((id) => {
+        this._compactTableRows(document.getElementById(id + "_table"));
+      });
+      // Refresh scores, hand counters, and badges for every player
+      Object.keys(this._playerStats).forEach((pid) => {
+        this._updateScore(parseInt(pid));
       });
     },
 
@@ -513,12 +534,8 @@ define([
         this._playerStats[pid].table += cards.length;
       }
 
-      if (tableStock) {
-        await tableStock.addCards(cards);
-        this._compactTableRows(this._getTableEl(pid));
-      }
-
-      this._updateScore(pid);
+      if (tableStock) await tableStock.addCards(cards);
+      this._refreshAll();
     },
 
     /** Active player takes snatched cards into their hand */
@@ -539,11 +556,8 @@ define([
         } else {
           tableStock.removeCards(cards);
         }
-        this._compactTableRows(this._getTableEl(robbedId));
       }
-
-      this._updateScore(takerId);
-      this._updateScore(robbedId);
+      this._refreshAll();
     },
 
     /** Active player declines — just clear the highlight */
@@ -552,6 +566,7 @@ define([
       if (robbed_id == null) return;
       const rowEl = document.getElementById(robbed_id + "_table_row_" + row_idx);
       if (rowEl) rowEl.classList.remove("snatch-highlight");
+      this._refreshAll();
     },
 
     /** Robbed player picks up their own cards back to hand */
@@ -574,11 +589,9 @@ define([
           } else {
             tableStock.removeCards(cards);
           }
-          this._compactTableRows(this._getTableEl(pid));
         }
       }
-
-      this._updateScore(pid);
+      this._refreshAll();
     },
 
     /** Robbed player discards their snatched cards */
@@ -593,11 +606,9 @@ define([
         if (cards.length > 0) {
           if (this._playerStats[pid]) this._playerStats[pid].table -= cards.length;
           await this.discardStock.addCards(cards);
-          this._compactTableRows(this._getTableEl(pid));
         }
       }
-
-      this._updateScore(pid);
+      this._refreshAll();
     },
 
     /** Player draws a card (public — from pool, or face-down from deck for others) */
@@ -606,16 +617,19 @@ define([
       if (player_id == null) return;
       const pid       = parseInt(player_id);
       const handStock = this._getHandStock(pid);
+      const currentId = parseInt(this.gamedatas.current_player.id);
 
       if (from_pool && card) {
         if (this._playerStats[pid]) this._playerStats[pid].hand += 1;
         if (handStock) {
           await handStock.addCards([card]);
+        } else {
+          this.poolStock.removeCard(card);
         }
-        // If no hand stock (other player), card just disappears from pool naturally
-        this._updateScore(pid);
+      } else if (!from_pool && pid !== currentId) {
+        if (this._playerStats[pid]) this._playerStats[pid].hand += 1;
       }
-      // deck draw for others: no card object sent publicly, so nothing to animate
+      this._refreshAll();
     },
 
     /** Private notification for the player who drew from deck — reveals their card */
@@ -625,16 +639,17 @@ define([
         const pid = parseInt(this.gamedatas.current_player.id);
         if (this._playerStats[pid]) this._playerStats[pid].hand += 1;
         await this.handStock.addCard(card);
-        this._updateScore(pid);
       }
+      this._refreshAll();
     },
 
     /** New cards added to pool from deck */
     notif_poolReplenished: async function (notif) {
       const { cards } = this._args(notif);
       if (cards && cards.length > 0) {
-        this.poolStock.addCards(cards);
+        await this.poolStock.addCards(cards);
       }
+      this._refreshAll();
     },
 
     /** Final scores (BGA framework updates scoreboard automatically) */

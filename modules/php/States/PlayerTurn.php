@@ -60,10 +60,12 @@ class PlayerTurn extends GameState
         $this->game->cards->moveCards($cardIds, 'playertable' . $rowIdx, $activePlayerId);
 
         // Notify all players
-        $this->notify->all('cardPlayed', clienttranslate('${player_name} plays ${count} card(s)'), [
+        $cardLabels = array_map(fn($c) => $c['type'] == 14 ? 'X' : (string)$c['type'], $selectedCards);
+        $this->notify->all('cardPlayed', clienttranslate('${player_name} plays: ${card_list}'), [
             'player_id'   => $activePlayerId,
             'player_name' => $this->game->getPlayerNameById($activePlayerId),
             'count'       => count($selectedCards),
+            'card_list'   => implode(', ', $cardLabels),
             'cards'       => $selectedCards,
             'row_idx'     => $rowIdx,
         ]);
