@@ -253,6 +253,10 @@
   margin-left: 0;
 }
 
+.table-area {
+  overflow: visible;
+}
+
 .hand-count-badge {
   font-size: 12px;
   color: #666;

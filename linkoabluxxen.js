@@ -165,6 +165,8 @@ define([
           this.tableStocks[i].addCards(rowCards);
         }
       });
+
+      this._compactTableRows(document.getElementById("mytable"));
     },
 
     _otherPlayersSetup: function (gamedatas) {
@@ -197,6 +199,8 @@ define([
             tables[i].addCards(rowCards);
           }
         });
+
+        this._compactTableRows(document.getElementById(id + "_table"));
       });
     },
 
@@ -264,6 +268,26 @@ define([
     // -------------------------------------------------------------------------
     // Stock lookup helpers
     // -------------------------------------------------------------------------
+
+    _getTableEl: function (playerId) {
+      const currentId = parseInt(this.gamedatas.current_player.id);
+      return parseInt(playerId) === currentId
+        ? document.getElementById("mytable")
+        : document.getElementById(playerId + "_table");
+    },
+
+    _compactTableRows: function (tableEl) {
+      if (!tableEl) return;
+      let seenCards = false;
+      Array.from(tableEl.children).forEach((row) => {
+        const hasCards = row.children.length > 0;
+        const rowIndex = parseInt(row.id.split("_").pop());
+        row.style.position = "relative";
+        row.style.zIndex = rowIndex;
+        row.style.marginTop = hasCards && seenCards ? "-150px" : "0";
+        if (hasCards) seenCards = true;
+      });
+    },
 
     _getTableStock: function (playerId, rowIdx) {
       const currentId = parseInt(this.gamedatas.current_player.id);
@@ -470,6 +494,7 @@ define([
 
       if (tableStock) {
         await tableStock.addCards(cards);
+        this._compactTableRows(this._getTableEl(pid));
       }
 
       this._updateScore(pid);
@@ -493,6 +518,7 @@ define([
         } else {
           tableStock.removeCards(cards);
         }
+        this._compactTableRows(this._getTableEl(robbedId));
       }
 
       this._updateScore(takerId);
@@ -527,6 +553,7 @@ define([
           } else {
             tableStock.removeCards(cards);
           }
+          this._compactTableRows(this._getTableEl(pid));
         }
       }
 
@@ -545,6 +572,7 @@ define([
         if (cards.length > 0) {
           if (this._playerStats[pid]) this._playerStats[pid].table -= cards.length;
           await this.discardStock.addCards(cards);
+          this._compactTableRows(this._getTableEl(pid));
         }
       }
 
