@@ -133,10 +133,10 @@ define([
     },
 
     _currentPlayerSetup: function (gamedatas) {
-      this.handStock = new BgaCards.HandStock(
+      this.handStock = new BgaCards.LineStock(
         this.cardsManager,
         document.getElementById("myhand"),
-        { sort: (a, b) => a.type - b.type, fanShaped: false }
+        { sort: (a, b) => a.type - b.type }
       );
       this.handStock.setSelectionMode("multiple");
 
