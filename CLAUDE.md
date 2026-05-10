@@ -37,10 +37,10 @@ Single `card` table managed by BGA's Deck component. Key fields:
 
 ### Game Setup
 
-- 2–5 players; each player gets 11 cards in hand
-- 6 cards revealed in public pool (13 cards for 2-player)
-- 2-player mode: 2 jokers dealt per player directly (not from pool)
-- 104 number cards (8 copies each of 1–13) + 5 joker cards
+- 2–5 players; official rules deal **13 cards** per player (current code deals 11 — known discrepancy)
+- 6 cards revealed face-up in the **card row** (public draw source); current code calls this "pool"
+- 2-player variant: 2 jokers dealt per player directly + 13 cards in card row (house rule, not in official PDF)
+- 104 number cards (8 copies each of 1–13) + 5 joker cards + 1 Linko card
 
 ## Key Patterns
 
@@ -55,7 +55,7 @@ Single `card` table managed by BGA's Deck component. Key fields:
 - ✅ Player turn with card selection and combination logic (N of a value + jokers)
 - ✅ Multiple table rows per player
 - ⚠️ Game-end detection not implemented (`$gameEnd = false` in `NextPlayer.php`)
-- ❌ Abluxxing mechanic (core bluffing mechanic from rules — see `misc/rules.md`)
+- ❌ Snatching/Abluxxen mechanic: after playing, compare with each neighbor's top stack (clockwise); if count matches AND card number is higher → must snatch; active player decides to take or not; robbed player replenishes hand from card row/draw pile (see `misc/rules.md`)
 - ❌ Drawing cards from deck after playing
 - ❌ Final score calculation in `EndScore.php`
 - ❌ Game options, preferences, and statistics (`gameoptions.json`, `gamepreferences.json`, `stats.json` are empty)
