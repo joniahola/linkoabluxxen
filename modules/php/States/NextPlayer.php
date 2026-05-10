@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 namespace Bga\Games\LinkoAbluxxen\States;
@@ -9,10 +8,8 @@ use Bga\Games\LinkoAbluxxen\Game;
 
 class NextPlayer extends \Bga\GameFramework\States\GameState
 {
-
-    function __construct(
-        protected Game $game,
-    ) {
+    function __construct(protected Game $game)
+    {
         parent::__construct($game,
             id: 90,
             type: StateType::GAME,
@@ -20,24 +17,15 @@ class NextPlayer extends \Bga\GameFramework\States\GameState
         );
     }
 
-    /**
-     * Game state action, example content.
-     *
-     * The onEnteringState method of state `nextPlayer` is called everytime the current game state is set to `nextPlayer`.
-     */
-    function onEnteringState(int $activePlayerId) {
-
-        // Give some extra time to the active player when he completed an action
+    function onEnteringState(int $activePlayerId): string
+    {
         $this->game->giveExtraTime($activePlayerId);
-        
-        $this->game->activeNextPlayer();
 
-        // Go to another gamestate
-        $gameEnd = false; // Here, we would detect if the game is over to make the appropriate transition
-        if ($gameEnd) {
+        if ($this->game->isGameOver()) {
             return EndScore::class;
-        } else {
-            return PlayerTurn::class;
         }
+
+        $this->game->activeNextPlayer();
+        return PlayerTurn::class;
     }
 }

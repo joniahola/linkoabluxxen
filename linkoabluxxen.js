@@ -1,18 +1,6 @@
 /**
- *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * LinkoAbluxxen implementation : © <Your name here> <Your email address here>
- *
- * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
- * See http://en.boardgamearena.com/#!doc/Studio for more information.
- * -----
- *
- * linkoabluxxen.js
- *
- * LinkoAbluxxen user interface script
- *
- * In this file, you are describing the logic of your user interface, in Javascript language.
- *
+ * LinkoAbluxxen implementation : © Joni Ahola aholanjoni@gmail.com
  */
 
 define([
@@ -20,55 +8,40 @@ define([
   "dojo/_base/declare",
   "ebg/core/gamegui",
   "ebg/counter",
-  getLibUrl("bga-animations", "1.x"), // the lib uses bga-animations so this is required!
+  getLibUrl("bga-animations", "1.x"),
   getLibUrl("bga-cards", "1.0.7"),
 ], function (dojo, declare, gamegui, counter, BgaAnimations, BgaCards) {
   return declare("bgagame.linkoabluxxen", ebg.core.gamegui, {
     constructor: function () {
-      // Here, you can init the global variables of your user interface
-      // Example:
-      // this.myGlobalValue = 0;
+      this.tableStocks = [];      // current player's per-row stocks
+      this.othersStocks = {};     // { playerId: { hand, tables[] } }
     },
 
-    /*
-            setup:
-            
-            This method must set up the game user interface according to current game situation specified
-            in parameters.
-            
-            The method is called each time the game interface is displayed to a player, ie:
-            _ when the game starts
-            _ when a player refreshes the game page (F5)
-            
-            "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
-        */
-
     setup: function (gamedatas) {
-      this._generatePlayAreasSetup(gamedatas);
       this._managerSetup(gamedatas);
-
+      this._generatePlayAreasSetup(gamedatas);
       this._poolSetup(gamedatas);
       this._discardSetup(gamedatas);
-      //this._deckSetup(gamedatas);
       this._currentPlayerSetup(gamedatas);
       this._otherPlayersSetup(gamedatas);
-
       this._playerBoardsSetup(gamedatas);
-      // Setup game notifications to handle (see "setupNotifications" method below)
       this.setupNotifications();
 
       if (this.isSpectator) {
-        this._spectatorSetup(gamedatas);
+        document.getElementById("myhand_wrap").style.display = "none";
       }
-      this._debugSetup(gamedatas);
+
+      window.linko = { game: this, gamedatas };
     },
+
+    // -------------------------------------------------------------------------
+    // Setup helpers
+    // -------------------------------------------------------------------------
+
     _managerSetup: function (gamedatas) {
-      // create the animation manager, and bind it to the `game.bgaAnimationsActive()` function
       this.animationManager = new BgaAnimations.Manager({
         animationsActive: () => this.bgaAnimationsActive(),
       });
-
-      // create the card manager
       this.cardsManager = new BgaCards.Manager({
         animationManager: this.animationManager,
         type: "card",
@@ -80,348 +53,253 @@ define([
           div.dataset.type = card.type;
           this.addTooltipHtml(
             div.id,
-            _(this.gamedatas.card_types[card.type_arg]["card_name"])
+            _(this.gamedatas.card_types[card.type_arg]?.card_name ?? card.type_arg)
           );
         },
       });
     },
+
+    _makeTableRows: function (prefix) {
+      // Rows rendered highest→lowest so newest (highest index) appears on top visually
+      return Array.from({ length: 109 }, (_, i) => 108 - i)
+        .map((i) => `<div id="${prefix}_row_${i}"></div>`)
+        .join("");
+    },
+
     _generatePlayAreasSetup: function (gamedatas) {
-      var makeTableRows = (prefix) =>
-        Array.from({ length: 109 }, (_, i) => 108 - i)
-          .map((i) => `<div id="${prefix}_row_${i}"></div>`)
-          .join("");
+      const currentId = parseInt(gamedatas.current_player.id);
 
-      // get another player playing areas
-      var extra_areas = "";
-      if (gamedatas.players_hands && gamedatas.current_player) {
-        const currentId = parseInt(gamedatas.current_player.id);
-        extra_areas = Object.keys(gamedatas.players_hands)
-          .filter((key) => parseInt(key) !== currentId)
-          .map((key) => {
-            var player = gamedatas.players_hands[key];
-            var name = player.name;
-            var tableCount = player.playertable ? Object.keys(player.playertable).length : 0;
-            var handCount = player.hand ? Object.keys(player.hand).length : 0;
-            return `
-              <div id="${key}_table_wrap" class="whiteblock table-area">
-                <b id="${key}_table_label">${name} ${_("table")}</b>
-                <div id="${key}_table">
-                  ${makeTableRows(`${key}_table`)}
-                </div>
-                <div id="${key}_table_counter" class="counter">${tableCount}</div>
-              </div>
-              <div id="${key}_myhand_wrap" class="whiteblock hand-area">
-                <b id="${key}_myhand_label">${name} ${_("hand")}</b>
-                <div id="${key}_myhand"></div>
-                <div id="${key}_hand_counter" class="counter">${handCount}</div>
-              </div>
-            `;
-          })
-          .join("");
-      }
-
-      var generate_rows = makeTableRows("mytable");
+      const otherAreas = Object.keys(gamedatas.players_hands)
+        .filter((id) => parseInt(id) !== currentId)
+        .map((id) => {
+          const player = gamedatas.players_hands[id];
+          return `
+            <div id="${id}_table_wrap" class="whiteblock table-area">
+              <b>${player.name} ${_("table")}</b>
+              <div id="${id}_table">${this._makeTableRows(id + "_table")}</div>
+            </div>
+            <div id="${id}_myhand_wrap" class="whiteblock hand-area">
+              <b>${player.name} ${_("hand")}</b>
+              <div id="${id}_myhand"></div>
+              <span id="${id}_hand_counter_el"></span>
+            </div>
+          `;
+        })
+        .join("");
 
       document.getElementById("game_play_area").insertAdjacentHTML(
         "beforeend",
         `
-          <div id="deck_area" class="whiteblock deck-area">
-            <b id="stock-label">${_("Deck")}</b>
-            <div id="deck" class="card-stock"></div>
-            <div id="deck_counter" class="counter">${
-              gamedatas.deck ? Object.keys(gamedatas.deck).length : 0
-            }</div>
-          </div>
-
-          <div id="discard_area" class="whiteblock discard-area">
-            <b id="stock-label">${_("Discard")}</b>
-            <div id="discard" class="card-stock"></div>
-            <div id="discard_counter" class="counter">${
-              gamedatas.discardpile
-                ? Object.keys(gamedatas.discardpile).length
-                : 0
-            }</div>
-          </div>
-          <div id="pool_area" class="whiteblock pool-area">
-            <b id="pool_label">${_("Pool")}</b>
-            <div id="pool" class="pool-cards"></div>
-            <div id="pool_counter" class="counter">${
-              gamedatas.pool ? Object.keys(gamedatas.pool).length : 0
-            }</div>
-          </div>
-          <div id="mytable_wrap" class="whiteblock table-area">
-              <b id="mytable_label">${_("My table")}</b>
-              <div id="mytable">
-                ${generate_rows}
-              </div>
-              <div id="table_counter" class="counter">${
-                gamedatas.current_player.playertable
-                  ? Object.keys(gamedatas.current_player.playertable).length
-                  : 0
-              }</div>
-          </div>
-          <div id="myhand_wrap" class="whiteblock hand-area">
-              <b id="myhand_label">${_("My hand")}</b>
-              <div id="myhand"></div>
-              <div id="hand_counter" class="counter">${
-                gamedatas.current_player.hand
-                  ? Object.keys(gamedatas.current_player.hand).length
-                  : 0
-              }</div>
-          </div>
-          ` + extra_areas
+        <div id="deck_area" class="whiteblock deck-area">
+          <b>${_("Deck")}</b>
+          <div id="deck" class="card-stock"></div>
+          <span id="deck_counter_el">${gamedatas.deck_count ?? 0}</span>
+        </div>
+        <div id="discard_area" class="whiteblock discard-area">
+          <b>${_("Discard")}</b>
+          <div id="discard" class="card-stock"></div>
+        </div>
+        <div id="pool_area" class="whiteblock pool-area">
+          <b>${_("Card row")}</b>
+          <div id="pool" class="pool-cards"></div>
+        </div>
+        <div id="mytable_wrap" class="whiteblock table-area">
+          <b>${_("My table")}</b>
+          <div id="mytable">${this._makeTableRows("mytable")}</div>
+        </div>
+        <div id="myhand_wrap" class="whiteblock hand-area">
+          <b>${_("My hand")}</b>
+          <div id="myhand"></div>
+        </div>
+        ${otherAreas}
+        `
       );
 
-      // Add some CSS styles
       dojo.addClass("game_play_area", "linko-play-area");
     },
+
     _poolSetup: function (gamedatas) {
-      // Create a stock for the pool (face down cards)
       this.poolStock = new BgaCards.LineStock(
         this.cardsManager,
         document.getElementById("pool"),
-        {
-          fanShaped: false,
-          sort: false, // Don't sort deck cards
-        }
+        { fanShaped: false, sort: false }
       );
-      this.poolStock.setSelectionMode("multiple");
+      this.poolStock.setSelectionMode("none");
 
-      // Display deck cards
-      if (gamedatas.pool && Object.keys(gamedatas.pool).length > 0) {
-        const deckCardsArray = Object.values(gamedatas.pool);
-        this.poolStock.addCards(deckCardsArray);
-      }
+      const poolCards = gamedatas.pool ? Object.values(gamedatas.pool) : [];
+      if (poolCards.length > 0) this.poolStock.addCards(poolCards);
     },
-    _deckSetup: function (gamedatas) {
-      // Create a stock for the pool (face down cards)
-      this.deckStock = new BgaCards.LineStock(
-        this.cardsManager,
-        document.getElementById("deck"),
-        {
-          fanShaped: false,
-          sort: false, // Don't sort deck cards
-        }
-      );
 
-      // Display deck cards
-      if (gamedatas.deck && Object.keys(gamedatas.deck).length > 0) {
-        const deckCardsArray = Object.values(gamedatas.deck);
-        this.deckStock.addCards(deckCardsArray);
-      }
-    },
     _discardSetup: function (gamedatas) {
-      // Create a stock for the pool (face down cards)
       this.discardStock = new BgaCards.LineStock(
         this.cardsManager,
         document.getElementById("discard"),
-        {
-          fanShaped: false,
-          sort: false, // Don't sort deck cards
-        }
+        { fanShaped: false, sort: false }
       );
-
-      // Display deck cards
-      if (gamedatas.discard && Object.keys(gamedatas.discard).length > 0) {
-        const deckCardsArray = Object.values(gamedatas.discard);
-        this.discardStock.addCards(deckCardsArray);
-      }
+      const discardCards = gamedatas.discardpile ? Object.values(gamedatas.discardpile) : [];
+      if (discardCards.length > 0) this.discardStock.addCards(discardCards);
     },
-    _otherPlayersSetup: function (gamedatas) {
-      this.others_stock = [];
 
-      Object.keys(gamedatas.players_hands).forEach((key) => {
-        if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
-          var player = gamedatas.players_hands[key];
-
-          //create tables:
-          //${key}_table_row_${i}
-          const tables = [];
-          for (let i = 0; i < 109; i++) {
-            tables.push(
-              new BgaCards.LineStock(
-                this.cardsManager,
-                document.getElementById(key + "_table_row_" + i),
-                {
-                  fanShaped: false,
-                  sort: false,
-                }
-              )
-            );
-          }
-
-          //player.playertable
-          //player.hand
-          //${key}_myhand
-          var stock = {
-            hand: new BgaCards.LineStock(
-              this.cardsManager,
-              document.getElementById(key + "_myhand"),
-              {
-                sort: (a, b) => a.type - b.type,
-                fanShaped: false,
-              }
-            ),
-            tables: tables,
-          };
-          console.log(stock);
-
-          // Display deck cards if they exist
-          if (player.hand && Object.keys(player.hand).length > 0) {
-            // Convert the deck object to array and add to handStock
-            const deckCardsArray = Object.values(player.hand);
-            stock.hand.addCards(deckCardsArray);
-          }
-
-          if (
-            player.playertable &&
-            Object.keys(player.playertable).length > 0
-          ) {
-            // Convert the deck object to array and add to handStock
-            const deckCardsArray = Object.values(player.playertable);
-            stock.table.addCards(deckCardsArray);
-          }
-          this.others_stock[key] = stock;
-        }
-      });
-    },
     _currentPlayerSetup: function (gamedatas) {
-      // create the stock, in the game setup
       this.handStock = new BgaCards.HandStock(
         this.cardsManager,
         document.getElementById("myhand"),
-        {
-          sort: (a, b) => a.type - b.type,
-          fanShaped: false,
-        }
+        { sort: (a, b) => a.type - b.type, fanShaped: false }
       );
       this.handStock.setSelectionMode("multiple");
 
-      const tables = [];
+      // Create per-row stocks for current player
+      this.tableStocks = [];
       for (let i = 0; i < 109; i++) {
-        tables.push(
+        this.tableStocks.push(
           new BgaCards.LineStock(
             this.cardsManager,
             document.getElementById("mytable_row_" + i),
-            {
-              fanShaped: false,
-              sort: false,
-            }
+            { fanShaped: false, sort: false }
           )
         );
       }
 
-      this.tableStocks = tables;
-      // Display deck cards if they exist
-      if (
-        gamedatas.current_player.hand &&
-        Object.keys(gamedatas.current_player.hand).length > 0
-      ) {
-        // Convert the deck object to array and add to handStock
-        const deckCardsArray = Object.values(gamedatas.current_player.hand);
-        this.handStock.addCards(deckCardsArray);
-      }
+      // Populate hand
+      const hand = gamedatas.current_player.hand
+        ? Object.values(gamedatas.current_player.hand)
+        : [];
+      if (hand.length > 0) this.handStock.addCards(hand);
 
-      if (
-        gamedatas.current_player.playertable &&
-        Object.keys(gamedatas.current_player.playertable).length > 0
-      ) {
-        // Convert the deck object to array and add to handStock
-        const deckCardsArray = Object.values(
-          gamedatas.current_player.playertable
-        );
-        this.tableStock.addCards(deckCardsArray);
-      }
+      // Populate table rows
+      const playertables = gamedatas.current_player.playertables || [];
+      playertables.forEach((rowCards, i) => {
+        if (rowCards && rowCards.length > 0) {
+          this.tableStocks[i].addCards(rowCards);
+        }
+      });
     },
+
+    _otherPlayersSetup: function (gamedatas) {
+      const currentId = parseInt(gamedatas.current_player.id);
+      this.othersStocks = {};
+
+      Object.keys(gamedatas.players_hands).forEach((id) => {
+        if (parseInt(id) === currentId) return;
+
+        const player = gamedatas.players_hands[id];
+
+        // Per-row table stocks
+        const tables = [];
+        for (let i = 0; i < 109; i++) {
+          tables.push(
+            new BgaCards.LineStock(
+              this.cardsManager,
+              document.getElementById(id + "_table_row_" + i),
+              { fanShaped: false, sort: false }
+            )
+          );
+        }
+
+        // Hand stock (shows card backs — isCardVisible can be overridden per-stock if needed)
+        const handStock = new BgaCards.LineStock(
+          this.cardsManager,
+          document.getElementById(id + "_myhand"),
+          { sort: (a, b) => a.type - b.type, fanShaped: false }
+        );
+
+        this.othersStocks[id] = { hand: handStock, tables };
+
+        // Populate hand
+        const hand = player.hand ? Object.values(player.hand) : [];
+        if (hand.length > 0) handStock.addCards(hand);
+
+        // Populate table rows
+        const playertables = player.playertables || [];
+        playertables.forEach((rowCards, i) => {
+          if (rowCards && rowCards.length > 0) {
+            tables[i].addCards(rowCards);
+          }
+        });
+      });
+    },
+
     _playerBoardsSetup: function (gamedatas) {
-      // Setting up player boards
       Object.values(gamedatas.players).forEach((player) => {
-        // example of setting up players boards
         this.getPlayerPanelElement(player.id).insertAdjacentHTML(
           "beforeend",
-          `
-                <span id="cards-player-counter-${player.id}"></span> Cards
-            `
+          `<span id="hand-count-${player.id}"></span> cards`
         );
-        const counter = new ebg.counter();
-        counter.create(`cards-player-counter-${player.id}`, {
-          value: Object.keys(gamedatas.players_hands[player.id].hand).length,
+        const handCount = gamedatas.players_hands[player.id]
+          ? Object.keys(gamedatas.players_hands[player.id].hand ?? {}).length
+          : 0;
+        const ctr = new ebg.counter();
+        ctr.create(`hand-count-${player.id}`, {
+          value: handCount,
           playerCounter: "cards",
           playerId: player.id,
         });
       });
     },
-    _spectatorSetup: function (gamedatas) {
-      document.getElementById("myhand_wrap").style.display = "none";
-    },
-    _debugSetup: function (gamedatas) {
-      const debugData = {
-        hand: this.gamedatas.hand,
-        gamedatas: this.gamedatas,
-        handStock: this.handStock,
-        cardsManager: this.cardsManager,
-        animationManager: this.animationManager,
-      };
-      window.linko = debugData;
+
+    // -------------------------------------------------------------------------
+    // Stock lookup helpers
+    // -------------------------------------------------------------------------
+
+    _getTableStock: function (playerId, rowIdx) {
+      const currentId = parseInt(this.gamedatas.current_player.id);
+      if (playerId === currentId) {
+        return this.tableStocks[rowIdx] ?? null;
+      }
+      return this.othersStocks[playerId]?.tables[rowIdx] ?? null;
     },
 
-    ///////////////////////////////////////////////////
-    //// Game & client states
+    _getHandStock: function (playerId) {
+      const currentId = parseInt(this.gamedatas.current_player.id);
+      if (playerId === currentId) return this.handStock;
+      return this.othersStocks[playerId]?.hand ?? null;
+    },
 
-    // onEnteringState: this method is called each time we are entering into a new game state.
-    //                  You can use this method to perform some user interface changes at this moment.
-    //
+    // -------------------------------------------------------------------------
+    // Game & client states
+    // -------------------------------------------------------------------------
+
     onEnteringState: function (stateName, args) {
       switch (stateName) {
-        /* Example:
-            
-            case 'myGameState':
-            
-                // Show some HTML block at this game state
-                dojo.style( 'my_html_block_id', 'display', 'block' );
-                
-                break;
-           */
-
-        case "dummy":
+        case "RobbedPlayerDraw":
+          if (this.isCurrentPlayerActive()) {
+            this.poolStock.setSelectionMode("single");
+            this.poolStock.onSelectionChange = (selection) => {
+              if (selection.length === 1) {
+                this._onPoolCardSelectedForDraw(selection[0]);
+              }
+            };
+          }
           break;
       }
     },
 
-    // onLeavingState: this method is called each time we are leaving a game state.
-    //                 You can use this method to perform some user interface changes at this moment.
-    //
     onLeavingState: function (stateName) {
       switch (stateName) {
-        /* Example:
-            
-            case 'myGameState':
-            
-                // Hide the HTML block we are displaying only during this game state
-                dojo.style( 'my_html_block_id', 'display', 'none' );
-                
-                break;
-           */
-
-        case "dummy":
+        case "RobbedPlayerDraw":
+          this.poolStock.setSelectionMode("none");
+          this.poolStock.onSelectionChange = null;
+          this.poolStock.unselectAll();
+          break;
+        case "PlayerTurn":
+          this.handStock.unselectAll();
           break;
       }
     },
 
-    // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-    //                        action status bar (ie: the HTML links in the status bar).
-    //
+    // -------------------------------------------------------------------------
+    // Action buttons
+    // -------------------------------------------------------------------------
+
     _cardLabel: function (type) {
       return type == "14" ? "X" : type;
     },
 
     _playOptionDescription: function (numType, numCount, jokerCount) {
-      const numLabel = this._cardLabel(numType);
-      const prefix = (count) => (count == 1 ? "" : count + "x");
-      if (jokerCount === 0) {
-        return `Play ${prefix(numCount)}${numLabel}`;
-      }
-      return `Play ${prefix(numCount)}${numLabel} & ${prefix(jokerCount)}X`;
+      const numLabel = this._cardLabel(String(numType));
+      const prefix = (n) => (n === 1 ? "" : n + "×");
+      if (jokerCount === 0) return `Play ${prefix(numCount)}${numLabel}`;
+      return `Play ${prefix(numCount)}${numLabel} + ${prefix(jokerCount)}X`;
     },
 
     _buildPlayOptions: function (numCount, jokerCount) {
@@ -437,10 +315,10 @@ define([
 
     _showConfirmButtons: function (stateName, args, numberCards, jokerCards, option, numType) {
       this.statusBar.removeActionButtons();
-      this.statusBar.addActionButton("← Back", () =>
+      this.statusBar.addActionButton(_("← Back"), () =>
         this._showCardQuantityButtons(stateName, args, numType)
       );
-      this.statusBar.addActionButton("Confirm", () => {
+      this.statusBar.addActionButton(_("Confirm"), () => {
         const selectedCards = [
           ...numberCards.slice(0, option.numCount),
           ...jokerCards.slice(0, option.jokerCount),
@@ -448,96 +326,214 @@ define([
         this.bgaPerformAction("actPlayCard", {
           selectedCards: JSON.stringify(selectedCards),
         }).then(() => {
-          const emptyStock = this.tableStocks.find((s) => s.isEmpty());
-          if (emptyStock) {
-            emptyStock.addCards(selectedCards);
-            selectedCards.forEach((card) =>
-              this.handStock.cardRemoved(card, {
-                autoUpdateCardNumber: true,
-                fadeOut: true,
-              })
-            );
-          }
+          this.handStock.unselectAll();
         });
       });
     },
 
     _showCardQuantityButtons: function (stateName, args, numType) {
-      const allCards = Object.values(args.hand).sort((a, b) => a.type - b.type);
-      const numberCards = allCards.filter((card) => card.type == numType);
-      const jokerCards = numType == "14" ? [] : allCards.filter((card) => card.type == "14");
+      const allCards    = Object.values(args.hand).sort((a, b) => a.type - b.type);
+      const numberCards = allCards.filter((c) => c.type == numType);
+      const jokerCards  = numType == "14" ? [] : allCards.filter((c) => c.type == "14");
 
       this.statusBar.removeActionButtons();
-      this.statusBar.addActionButton("← Back", () =>
+      this.statusBar.addActionButton(_("← Back"), () =>
         this.onUpdateActionButtons(stateName, args)
       );
 
       this._buildPlayOptions(numberCards.length, jokerCards.length).forEach((option) => {
-        const description = this._playOptionDescription(numType, option.numCount, option.jokerCount);
-        this.statusBar.addActionButton(description, () =>
+        const label = this._playOptionDescription(numType, option.numCount, option.jokerCount);
+        this.statusBar.addActionButton(label, () =>
           this._showConfirmButtons(stateName, args, numberCards, jokerCards, option, numType)
         );
       });
     },
 
     onUpdateActionButtons: function (stateName, args) {
-      if (!this.isCurrentPlayerActive()) {
-        return;
-      }
+      if (!this.isCurrentPlayerActive()) return;
 
       switch (stateName) {
-        case "PlayerTurn":
-          // Unique card types in hand, sorted
+        case "PlayerTurn": {
           const uniqueTypes = Object.values(args.hand)
             .sort((a, b) => a.type - b.type)
-            .filter((card, i, arr) => i === 0 || card.type !== arr[i - 1].type);
+            .filter((c, i, arr) => i === 0 || c.type !== arr[i - 1].type);
 
           this.statusBar.removeActionButtons();
           uniqueTypes.forEach((card) => {
-            const numType = card.type;
-            this.statusBar.addActionButton(this._cardLabel(numType), () =>
-              this._showCardQuantityButtons(stateName, args, numType)
+            this.statusBar.addActionButton(this._cardLabel(card.type), () =>
+              this._showCardQuantityButtons(stateName, args, card.type)
             );
           });
           break;
+        }
+
+        case "ActivePlayerSnatch": {
+          const snatch     = args.snatch;
+          const robbedName = args.robbed_name ?? "?";
+          this.statusBar.removeActionButtons();
+          this.statusBar.addActionButton(
+            `${_("Take")} (${snatch.card_count} card(s) from ${robbedName})`,
+            () => this.bgaPerformAction("actTakeSnatch", {})
+          );
+          this.statusBar.addActionButton(_("Skip"), () =>
+            this.bgaPerformAction("actSkipSnatch", {})
+          );
+
+          // Highlight the snatchable row
+          if (snatch.player_id) {
+            const rowEl = document.getElementById(
+              snatch.player_id + "_table_row_" + snatch.row_idx
+            );
+            if (rowEl) rowEl.classList.add("snatch-highlight");
+          }
+          break;
+        }
+
+        case "RobbedPlayerDecision": {
+          this.statusBar.removeActionButtons();
+          this.statusBar.addActionButton(_("Pick up"), () =>
+            this.bgaPerformAction("actPickUp", {})
+          );
+          this.statusBar.addActionButton(_("Discard and draw"), () =>
+            this.bgaPerformAction("actDiscard", {})
+          );
+          break;
+        }
+
+        case "RobbedPlayerDraw": {
+          const drawCount = args.draw_count ?? 0;
+          this.statusBar.removeActionButtons();
+          this.statusBar.addActionButton(
+            `${_("Draw from deck")} (${drawCount} remaining)`,
+            () => this.bgaPerformAction("actDrawCard", { cardId: 0 })
+          );
+          // Pool cards are clickable via the selection handler in onEnteringState
+          break;
+        }
       }
     },
 
-    ///////////////////////////////////////////////////
-    //// Utility methods
-
-    /*
-        
-            Here, you can defines some utility methods that you can use everywhere in your javascript
-            script.
-        
-        */
-
-    ///////////////////////////////////////////////////
-    //// Player's action
-
-    /*
-        
-            Here, you are defining methods to handle player's action (ex: results of mouse click on 
-            game objects).
-            
-            Most of the time, these methods:
-            _ check the action is possible at this game state.
-            _ make a call to the game server
-        
-        */
-
-    // Example:
-
-    onCardClick: function (cards, stateName) {
-      console.log("onCardClick", card_id);
+    _onPoolCardSelectedForDraw: function (card) {
+      this.bgaPerformAction("actDrawCard", { cardId: card.id }).then(() => {
+        this.poolStock.unselectAll();
+      });
     },
 
-    setupNotifications: function () {
-      console.log("notifications subscriptions setup");
+    // -------------------------------------------------------------------------
+    // Notifications
+    // -------------------------------------------------------------------------
 
-      // automatically listen to the notifications, based on the `notif_xxx` function on this class.
+    setupNotifications: function () {
       this.bgaSetupPromiseNotifications();
+    },
+
+    /** BGA can pass either the full notif object or just args directly. */
+    _args: function (notif) {
+      return notif?.args ?? notif ?? {};
+    },
+
+    /** Cards played from hand to player's table row */
+    notif_cardPlayed: async function (notif) {
+      const { player_id, cards, row_idx } = this._args(notif);
+      if (player_id == null) return;
+      const pid        = parseInt(player_id);
+      const handStock  = this._getHandStock(pid);
+      const tableStock = this._getTableStock(pid, row_idx);
+
+      if (handStock && tableStock) {
+        await tableStock.addCards(cards);
+      }
+    },
+
+    /** Active player takes snatched cards into their hand */
+    notif_snatchTaken: async function (notif) {
+      const { player_id, robbed_id, cards, row_idx } = this._args(notif);
+      if (player_id == null) return;
+      const takerId    = parseInt(player_id);
+      const robbedId   = parseInt(robbed_id);
+      const tableStock = this._getTableStock(robbedId, row_idx);
+      const handStock  = this._getHandStock(takerId);
+
+      if (tableStock && handStock) {
+        await handStock.addCards(cards);
+      }
+    },
+
+    /** Active player declines — just clear the highlight */
+    notif_snatchDeclined: async function (notif) {
+      const { robbed_id, row_idx } = this._args(notif);
+      if (robbed_id == null) return;
+      const rowEl = document.getElementById(robbed_id + "_table_row_" + row_idx);
+      if (rowEl) rowEl.classList.remove("snatch-highlight");
+    },
+
+    /** Robbed player picks up their own cards back to hand */
+    notif_cardsReturnedToHand: async function (notif) {
+      const { player_id, card_ids, row_idx } = this._args(notif);
+      if (player_id == null) return;
+      const pid        = parseInt(player_id);
+      const tableStock = this._getTableStock(pid, row_idx);
+      const handStock  = this._getHandStock(pid);
+
+      if (tableStock && handStock) {
+        const cards = tableStock.getCards().filter((c) => card_ids.includes(c.id));
+        if (cards.length > 0) {
+          tableStock.removeCards(cards);
+          await handStock.addCards(cards);
+        }
+      }
+    },
+
+    /** Robbed player discards their snatched cards */
+    notif_cardsDiscarded: async function (notif) {
+      const { player_id, card_ids, row_idx } = this._args(notif);
+      if (player_id == null) return;
+      const pid        = parseInt(player_id);
+      const tableStock = this._getTableStock(pid, row_idx);
+
+      if (tableStock) {
+        const cards = tableStock.getCards().filter((c) => card_ids.includes(c.id));
+        if (cards.length > 0) {
+          tableStock.removeCards(cards);
+          await this.discardStock.addCards(cards);
+        }
+      }
+    },
+
+    /** Player draws a card (public — from pool, or face-down from deck) */
+    notif_cardDrawn: async function (notif) {
+      const { player_id, from_pool, card } = this._args(notif);
+      if (player_id == null) return;
+      const pid       = parseInt(player_id);
+      const handStock = this._getHandStock(pid);
+
+      if (!handStock) return;
+
+      if (from_pool && card) {
+        await handStock.addCards([card]);
+      }
+      // deck draw is shown via notif_cardDrawnPrivate for the drawing player only
+    },
+
+    /** Private notification for the player who drew from deck — reveals their card */
+    notif_cardDrawnPrivate: async function (notif) {
+      const { card } = this._args(notif);
+      if (card) {
+        this.handStock.addCard(card);
+      }
+    },
+
+    /** New cards added to pool from deck */
+    notif_poolReplenished: async function (notif) {
+      const { cards } = this._args(notif);
+      if (cards && cards.length > 0) {
+        this.poolStock.addCards(cards);
+      }
+    },
+
+    /** Final scores (no UI change needed — BGA handles scoreboard) */
+    notif_finalScore: async function (notif) {
+      // BGA framework updates player_score automatically via the playerScore counter
     },
   });
 });

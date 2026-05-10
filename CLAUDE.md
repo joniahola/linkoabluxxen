@@ -13,11 +13,25 @@ This is a **Board Game Arena (BGA)** implementation of the card game **Linko!** 
 The game follows BGA's state machine pattern with a central `Game.php` and state-specific classes:
 
 - **`modules/php/Game.php`** — Main game class (`Bga\Games\LinkoAbluxxen` namespace, extends `\Bga\GameFramework\Table`). Owns the BGA Deck component (`$this->cards`), handles game setup, and provides `getAllDatas()` for client state.
-- **`modules/php/States/PlayerTurn.php`** — State 10 (ACTIVE_PLAYER). Handles card play action `actPlayCard()`.
-- **`modules/php/States/NextPlayer.php`** — State 90 (GAME). Rotates active player; game-end detection is currently hardcoded `false`.
-- **`modules/php/States/EndScore.php`** — State 98 (GAME). Placeholder; transitions directly to state 99 (ST_END_GAME).
+- **`modules/php/States/PlayerTurn.php`** — State 10 (ACTIVE_PLAYER). Validates and plays cards to the correct `playertable{i}` row, then calls `computeSnatches()` to decide the next state.
+- **`modules/php/States/ActivePlayerSnatch.php`** — State 20 (ACTIVE_PLAYER). Active player takes (`actTakeSnatch`) or skips (`actSkipSnatch`) the current snatch target.
+- **`modules/php/States/PrepareRobbed.php`** — State 25 (GAME). Switches the active player to the robbed player, then routes to state 30 or 40.
+- **`modules/php/States/RobbedPlayerDecision.php`** — State 30 (ACTIVE_PLAYER). Robbed player picks up their cards or discards and draws.
+- **`modules/php/States/RobbedPlayerDraw.php`** — State 40 (ACTIVE_PLAYER). Robbed player draws one card per action from pool (by card ID) or deck (ID=0); loops until `draw_count` reaches 0.
+- **`modules/php/States/AdvanceSnatch.php`** — State 45 (GAME). Replenishes pool, increments snatch index, restores original active player, loops back to state 20 or exits to state 90.
+- **`modules/php/States/NextPlayer.php`** — State 90 (GAME). Checks `isGameOver()`; if true → EndScore, else `activeNextPlayer()` → PlayerTurn.
+- **`modules/php/States/EndScore.php`** — State 98 (GAME). Counts stacked cards (+1) and hand cards (−1) per player, sets final scores, → state 99.
 
-State flow: `PlayerTurn (10) → NextPlayer (90) → PlayerTurn (10) → ... → EndScore (98) → 99`
+State flow:
+```
+PlayerTurn (10) → [snatches?] → ActivePlayerSnatch (20) → PrepareRobbed (25, GAME)
+                                      ↓                          ↓
+                              RobbedPlayerDecision (30)   RobbedPlayerDraw (40)
+                                      ↓                          ↓
+                                AdvanceSnatch (45, GAME) ←───────┘
+                                      ↓
+                              NextPlayer (90) → PlayerTurn (10) or EndScore (98) → 99
+```
 
 ### Frontend (JavaScript)
 
@@ -51,11 +65,13 @@ Single `card` table managed by BGA's Deck component. Key fields:
 
 ## Current Implementation Status
 
-- ✅ Game setup, dealing, and card display
+- ✅ Game setup, dealing (13 cards), and card display
 - ✅ Player turn with card selection and combination logic (N of a value + jokers)
-- ✅ Multiple table rows per player
-- ⚠️ Game-end detection not implemented (`$gameEnd = false` in `NextPlayer.php`)
-- ❌ Snatching/Abluxxen mechanic: after playing, compare with each neighbor's top stack (clockwise); if count matches AND card number is higher → must snatch; active player decides to take or not; robbed player replenishes hand from card row/draw pile (see `misc/rules.md`)
-- ❌ Drawing cards from deck after playing
-- ❌ Final score calculation in `EndScore.php`
-- ❌ Game options, preferences, and statistics (`gameoptions.json`, `gamepreferences.json`, `stats.json` are empty)
+- ✅ Multiple table rows per player (correct `playertable{i}` locations)
+- ✅ Snatching mechanic: `computeSnatches()` in Game.php; states 20→25→30/40→45
+- ✅ Active player takes or skips snatched cards (state 20)
+- ✅ Robbed player picks up or discards + draws from pool/deck (states 30, 40)
+- ✅ Pool replenishment after draws (`replenishPool()` called in AdvanceSnatch)
+- ✅ Game-end detection (`isGameOver()` in Game.php; checked in NextPlayer)
+- ✅ Final score calculation in `EndScore.php` (stacked +1, hand -1)
+- ❌ Game options, preferences, and statistics (empty JSON files)
