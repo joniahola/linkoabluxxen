@@ -217,21 +217,28 @@
   background: rgba(231, 76, 60, 0.08);
 }
 
-/* Compact card rows: cards overlap so only ~25% of each shows (all areas except Pool) */
-.table-area .bga-cards_card-stock,
-.hand-area .bga-cards_card-stock,
-.discard-area .bga-cards_card-stock {
+/* Compact card overlap: only ~25% of each card visible, left-to-right (all except Pool) */
+#discard,
+#myhand,
+[id^="mytable_row_"],
+[id*="_table_row_"] {
   display: flex !important;
   flex-direction: row;
   flex-wrap: nowrap;
   overflow: visible;
+  width: auto !important;
   height: auto !important;
+}
+
+#discard,
+#myhand {
   min-height: 199px;
 }
 
-.table-area .bga-cards_card-stock > .bga-cards_card,
-.hand-area .bga-cards_card-stock > .bga-cards_card,
-.discard-area .bga-cards_card-stock > .bga-cards_card {
+#discard > .bga-cards_card,
+#myhand > .bga-cards_card,
+[id^="mytable_row_"] > .bga-cards_card,
+[id*="_table_row_"] > .bga-cards_card {
   position: relative !important;
   left: auto !important;
   top: auto !important;
@@ -239,9 +246,10 @@
   flex-shrink: 0;
 }
 
-.table-area .bga-cards_card-stock > .bga-cards_card:first-child,
-.hand-area .bga-cards_card-stock > .bga-cards_card:first-child,
-.discard-area .bga-cards_card-stock > .bga-cards_card:first-child {
+#discard > .bga-cards_card:first-child,
+#myhand > .bga-cards_card:first-child,
+[id^="mytable_row_"] > .bga-cards_card:first-child,
+[id*="_table_row_"] > .bga-cards_card:first-child {
   margin-left: 0;
 }
 
