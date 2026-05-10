@@ -86,46 +86,41 @@ define([
       });
     },
     _generatePlayAreasSetup: function (gamedatas) {
+      var makeTableRows = (prefix) =>
+        Array.from({ length: 109 }, (_, i) => 108 - i)
+          .map((i) => `<div id="${prefix}_row_${i}"></div>`)
+          .join("");
+
       // get another player playing areas
       var extra_areas = "";
       if (gamedatas.players_hands && gamedatas.current_player) {
-        Object.keys(gamedatas.players_hands).forEach((key) => {
-          if (parseInt(key) != parseInt(gamedatas.current_player.id)) {
+        const currentId = parseInt(gamedatas.current_player.id);
+        extra_areas = Object.keys(gamedatas.players_hands)
+          .filter((key) => parseInt(key) !== currentId)
+          .map((key) => {
             var player = gamedatas.players_hands[key];
             var name = player.name;
-            var generate_rows = "";
-            for (var i = 108; i >= 0; i--) {
-              generate_rows =
-                generate_rows + `<div id="${key}_table_row_${i}"></div>`;
-            }
-            extra_areas =
-              extra_areas +
-              `
+            var tableCount = player.playertable ? Object.keys(player.playertable).length : 0;
+            var handCount = player.hand ? Object.keys(player.hand).length : 0;
+            return `
               <div id="${key}_table_wrap" class="whiteblock table-area">
                 <b id="${key}_table_label">${name} ${_("table")}</b>
                 <div id="${key}_table">
-                  ${generate_rows}
+                  ${makeTableRows(`${key}_table`)}
                 </div>
-                <div id="${key}_table_counter" class="counter">${
-                player.playertable ? Object.keys(player.playertable).length : 0
-              }</div>
+                <div id="${key}_table_counter" class="counter">${tableCount}</div>
               </div>
               <div id="${key}_myhand_wrap" class="whiteblock hand-area">
-                  <b id="${key}_myhand_label">${name} ${_("hand")}</b>
-                  <div id="${key}_myhand"></div>
-                  <div id="${key}_hand_counter" class="counter">${
-                player.hand ? Object.keys(player.hand).length : 0
-              }</div>
+                <b id="${key}_myhand_label">${name} ${_("hand")}</b>
+                <div id="${key}_myhand"></div>
+                <div id="${key}_hand_counter" class="counter">${handCount}</div>
               </div>
             `;
-          }
-        });
+          })
+          .join("");
       }
 
-      var generate_rows = "";
-      for (var i = 108; i >= 0; i--) {
-        generate_rows = generate_rows + `<div id="mytable_row_${i}"></div>`;
-      }
+      var generate_rows = makeTableRows("mytable");
 
       document.getElementById("game_play_area").insertAdjacentHTML(
         "beforeend",
@@ -416,6 +411,75 @@ define([
     // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
     //                        action status bar (ie: the HTML links in the status bar).
     //
+    _cardLabel: function (type) {
+      return type == "14" ? "X" : type;
+    },
+
+    _playOptionDescription: function (numType, numCount, jokerCount) {
+      const numLabel = this._cardLabel(numType);
+      const prefix = (count) => (count == 1 ? "" : count + "x");
+      if (jokerCount === 0) {
+        return `Play ${prefix(numCount)}${numLabel}`;
+      }
+      return `Play ${prefix(numCount)}${numLabel} & ${prefix(jokerCount)}X`;
+    },
+
+    _buildPlayOptions: function (numCount, jokerCount) {
+      const options = [];
+      for (let i = 1; i <= numCount; i++) {
+        options.push({ numCount: i, jokerCount: 0 });
+        for (let k = 1; k <= jokerCount; k++) {
+          options.push({ numCount: i, jokerCount: k });
+        }
+      }
+      return options;
+    },
+
+    _showConfirmButtons: function (stateName, args, numberCards, jokerCards, option, numType) {
+      this.statusBar.removeActionButtons();
+      this.statusBar.addActionButton("← Back", () =>
+        this._showCardQuantityButtons(stateName, args, numType)
+      );
+      this.statusBar.addActionButton("Confirm", () => {
+        const selectedCards = [
+          ...numberCards.slice(0, option.numCount),
+          ...jokerCards.slice(0, option.jokerCount),
+        ];
+        this.bgaPerformAction("actPlayCard", {
+          selectedCards: JSON.stringify(selectedCards),
+        }).then(() => {
+          const emptyStock = this.tableStocks.find((s) => s.isEmpty());
+          if (emptyStock) {
+            emptyStock.addCards(selectedCards);
+            selectedCards.forEach((card) =>
+              this.handStock.cardRemoved(card, {
+                autoUpdateCardNumber: true,
+                fadeOut: true,
+              })
+            );
+          }
+        });
+      });
+    },
+
+    _showCardQuantityButtons: function (stateName, args, numType) {
+      const allCards = Object.values(args.hand).sort((a, b) => a.type - b.type);
+      const numberCards = allCards.filter((card) => card.type == numType);
+      const jokerCards = numType == "14" ? [] : allCards.filter((card) => card.type == "14");
+
+      this.statusBar.removeActionButtons();
+      this.statusBar.addActionButton("← Back", () =>
+        this.onUpdateActionButtons(stateName, args)
+      );
+
+      this._buildPlayOptions(numberCards.length, jokerCards.length).forEach((option) => {
+        const description = this._playOptionDescription(numType, option.numCount, option.jokerCount);
+        this.statusBar.addActionButton(description, () =>
+          this._showConfirmButtons(stateName, args, numberCards, jokerCards, option, numType)
+        );
+      });
+    },
+
     onUpdateActionButtons: function (stateName, args) {
       if (!this.isCurrentPlayerActive()) {
         return;
@@ -423,119 +487,17 @@ define([
 
       switch (stateName) {
         case "PlayerTurn":
-          const hand = Object.values(args.hand)
+          // Unique card types in hand, sorted
+          const uniqueTypes = Object.values(args.hand)
             .sort((a, b) => a.type - b.type)
-            .filter(
-              (card, index, arr) =>
-                index === 0 || card.type !== arr[index - 1].type
-            );
-          //clear action buttons
+            .filter((card, i, arr) => i === 0 || card.type !== arr[i - 1].type);
+
           this.statusBar.removeActionButtons();
-          Object.keys(hand).forEach((key) => {
-            let number = hand[key].type;
-            if (number == "14") {
-              number = "X";
-            }
-
-            this.statusBar.addActionButton(number, () => {
-              //next we need to find out how many cards
-              if (number == "X") {
-                number = "14";
-              }
-              this.statusBar.removeActionButtons();
-              const hand = Object.values(args.hand)
-                .sort((a, b) => a.type - b.type)
-                .filter(
-                  (card, _index, _arr) =>
-                    card.type == number || card.type == "14"
-                );
-
-              // Separate and count cards
-              const numberCards = hand.filter((card) => card.type == number);
-              const jokerCards = hand.filter((card) => card.type == "14");
-              const counts = {
-                numbers: numberCards.length,
-                jokers: number == "14" ? 0 : jokerCards.length,
-              };
-
-              this.statusBar.addActionButton("← Back", () =>
-                this.onUpdateActionButtons(stateName, args)
-              );
-
-              // Generate options
-              const options = [];
-              for (let i = 1; i <= counts.numbers; i++) {
-                options.push({ numCount: i, jokerCount: 0 });
-              }
-              // add jokers also
-              if (counts.jokers) {
-                for (let i = 1; i <= counts.numbers; i++) {
-                  for (let k = 1; k <= counts.jokers; k++) {
-                    options.push({ numCount: i, jokerCount: k });
-                  }
-                }
-              }
-
-              // Create buttons
-              options.forEach((option, index) => {
-                const description =
-                  option.jokerCount === 0
-                    ? `Play ${
-                        option.numCount == 1 ? "" : option.numCount + "x"
-                      }${number == "14" ? "X" : number}`
-                    : `Play ${
-                        option.numCount == 1 ? "" : option.numCount + "x"
-                      }${number == "14" ? "X" : number} & ${
-                        option.jokerCount == 1 ? "" : option.jokerCount + "x"
-                      }X`;
-
-                this.statusBar.addActionButton(description, () => {
-                  this.statusBar.removeActionButtons();
-                  this.statusBar.addActionButton("← Back", () =>
-                    this.onUpdateActionButtons(stateName, args)
-                  );
-
-                  this.statusBar.addActionButton("Confirm", () => {
-                    // Simple card selection: take first X cards of each type
-                    const selectedCards = [
-                      ...numberCards.slice(0, option.numCount),
-                      ...jokerCards.slice(0, option.jokerCount),
-                    ];
-                    this.bgaPerformAction("actPlayCard", {
-                      selectedCards: JSON.stringify(selectedCards),
-                    }).then(() => {
-                      const deckCardsArray = Object.values(selectedCards);
-
-                      let found = false;
-                      for (let i = 0; i < this.tableStocks.length; i++) {
-                        if (this.tableStocks[i].isEmpty()) {
-                          this.tableStocks[i].addCards(deckCardsArray);
-                          found = true;
-                          break;
-                        }
-                      }
-                      if (found) {
-                        deckCardsArray.forEach((card, index) => {
-                          this.handStock.cardRemoved(card, {
-                            autoUpdateCardNumber: true,
-                            fadeOut: true,
-                          });
-                        });
-                      }
-
-                      // What to do after the server call if it succeeded
-                      // (most of the time, nothing, as the game will react to notifs / change of state instead)
-                    });
-                  });
-                  /**/
-
-                  //this.onCardClick(selectedCards, stateName);
-
-                  // Play cards
-                  // selectedCards.forEach(card => this.onCardClick(card.id));
-                });
-              });
-            });
+          uniqueTypes.forEach((card) => {
+            const numType = card.type;
+            this.statusBar.addActionButton(this._cardLabel(numType), () =>
+              this._showCardQuantityButtons(stateName, args, numType)
+            );
           });
           break;
       }
