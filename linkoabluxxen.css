@@ -63,6 +63,9 @@
         background-repeat: none;
     }
 */
+:root {
+  --bga-cards_selected-card_outline-color: transparent;
+}
 
 .card-front {
   background-image: url("img/cards.png") !important;
@@ -211,6 +214,19 @@
   outline: none !important;
 }
 
+#myhand > .bga-cards_card {
+  transition: transform 0.2s ease, outline 0.2s ease;
+}
+
+#myhand .bga-cards_selected-card,
+#myhand .bga-cards_selected-card:focus,
+#pool .bga-cards_selected-card,
+#pool .bga-cards_selected-card:focus {
+  transform: translateY(-24px);
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .snatch-highlight {
   outline: 3px solid #e74c3c;
   border-radius: 4px;
@@ -267,16 +283,22 @@
   margin-left: 0;
 }
 
-/* ── Combined player table — stacked layout for all screen sizes ── */
+/* ── Combined player table — 2 columns, 1 column on small screens ── */
 .combined-table-inner {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 8px;
 }
 
 .combined-player {
-  width: 100%;
+  width: calc(50% - 6px);
+}
+
+@media (max-width: 1049px) {
+  .combined-player {
+    width: 100%;
+  }
 }
 
 .combined-player-label {
@@ -284,10 +306,6 @@
   white-space: nowrap;
 }
 
-/* Current player always last (bottom) so opponents read top→bottom in turn order */
-.combined-player--me {
-  order: 99;
-}
 
 .hand-count-badge {
   font-size: 12px;
@@ -300,3 +318,4 @@
   color: #666;
   font-weight: normal;
 }
+

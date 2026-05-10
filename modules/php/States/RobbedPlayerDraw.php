@@ -46,9 +46,15 @@ class RobbedPlayerDraw extends GameState
 
         if ($cardId === 0) {
             // Draw blind from the deck
-            $deckCards = $this->game->cards->getCardsInLocation('deck');
+            $deckCards  = $this->game->cards->getCardsInLocation('deck');
+            $poolCards  = $this->game->cards->getCardsInLocation('pool');
             if (empty($deckCards)) {
-                // No deck — skip this draw
+                if (empty($poolCards)) {
+                    // Both deck and pool empty — skip all remaining draws and end draw phase
+                    $this->globals->set('draw_count', 0);
+                    return AdvanceSnatch::class;
+                }
+                // No deck but pool has cards — skip just this draw
                 $drawCount--;
                 $this->globals->set('draw_count', $drawCount);
                 if ($drawCount > 0) {

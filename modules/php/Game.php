@@ -59,7 +59,7 @@ class Game extends \Bga\GameFramework\Table
         $currentPlayerId = (int) $this->getCurrentPlayerId();
 
         $result['players'] = $this->getCollectionFromDb(
-            "SELECT `player_id` `id`, `player_score` `score`, `player_name` FROM `player`"
+            "SELECT `player_id` `id`, `player_score` `score`, `player_name`, `player_no` FROM `player`"
         );
         $result['card_types'] = self::$CARD_TYPES;
 

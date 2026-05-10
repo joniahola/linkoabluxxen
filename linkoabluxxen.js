@@ -67,26 +67,20 @@ define([
         .join("");
     },
 
-    _getPlayersInTurnOrder: function (gamedatas) {
-      const currentId = parseInt(gamedatas.current_player.id);
-      const players = Object.values(gamedatas.players).sort(
-        (a, b) => parseInt(a.player_no) - parseInt(b.player_no)
-      );
-      const idx = players.findIndex((p) => parseInt(p.id) === currentId);
-      return [...players.slice(idx), ...players.slice(0, idx)];
-    },
-
     _generatePlayAreasSetup: function (gamedatas) {
       const currentId = parseInt(gamedatas.current_player.id);
-      const ordered   = this._getPlayersInTurnOrder(gamedatas);
+      // Sort by player_no so tables match the game-start turn order (player 1 first)
+      const reordered = Object.values(gamedatas.players).sort(
+        (a, b) => parseInt(a.player_no) - parseInt(b.player_no)
+      );
 
-      const playerSections = ordered
+      const playerSections = reordered
         .map((player) => {
           const pid    = parseInt(player.id);
           const isMe   = pid === currentId;
           const prefix = isMe ? "mytable" : pid + "_table";
-          const badge  = isMe ? "" : `<span id="${pid}_hand_count_badge" class="hand-count-badge"></span>`;
-          const label  = isMe ? _("My table") : player.name;
+          const badge  = `<span id="${pid}_hand_count_badge" class="hand-count-badge"></span>`;
+          const label  = isMe ? `<u>${player.name}</u>` : player.name;
           return `
             <div id="cplayer_${pid}" class="combined-player${isMe ? " combined-player--me" : ""}">
               <div class="combined-player-label"><b>${label}</b>${badge}</div>
@@ -99,10 +93,6 @@ define([
       document.getElementById("game_play_area").insertAdjacentHTML(
         "beforeend",
         `
-        <div id="pool_area" class="whiteblock pool-area">
-          <b>${_("Pool")}</b> <span id="deck_counter_el" class="deck-count-label">(${gamedatas.deck_count ?? 0} ${_("cards in deck")})</span>
-          <div id="pool" class="pool-cards"></div>
-        </div>
         <div id="combined_table_area" class="whiteblock combined-table-area">
           <div id="combined_table_inner" class="combined-table-inner">
             ${playerSections}
@@ -111,6 +101,10 @@ define([
         <div id="myhand_wrap" class="whiteblock hand-area">
           <b>${_("My hand")}</b>
           <div id="myhand"></div>
+        </div>
+        <div id="pool_area" class="whiteblock pool-area">
+          <b>${_("Pool")}</b> <span id="deck_counter_el" class="deck-count-label">(${gamedatas.deck_count ?? 0} ${_("cards in deck")})</span>
+          <div id="pool" class="pool-cards"></div>
         </div>
         <div id="discard_area" class="whiteblock discard-area">
           <b>${_("Discard")}</b>
@@ -126,7 +120,7 @@ define([
       this.poolStock = new BgaCards.LineStock(
         this.cardsManager,
         document.getElementById("pool"),
-        { fanShaped: false, sort: false }
+        { fanShaped: false, sort: (a, b) => a.type - b.type }
       );
       this.poolStock.setSelectionMode("none");
 
@@ -247,10 +241,7 @@ define([
         // Set initial live score
         this._updateScore(pid);
 
-        // Update hand count badge in table header (other players only)
-        if (pid !== currentId) {
-          this._updateHandBadge(pid);
-        }
+        this._updateHandBadge(pid);
       });
     },
 
@@ -296,13 +287,6 @@ define([
       rows.forEach((row) => {
         row.style.zIndex = parseInt(row.id.split("_").pop());
       });
-
-      // Topmost non-empty row → opacity 1, each row below fades (min 0.05)
-      rows
-        .filter((row) => row.querySelector('.bga-cards_card') !== null)
-        .forEach((row, i) => {
-          row.style.opacity = Math.max(0.05, 1 - 0.35 * i);
-        });
     },
 
     _cleanRowEl: function (pid, rowIdx) {
@@ -313,6 +297,9 @@ define([
     },
 
     _refreshAll: function () {
+      document.querySelectorAll(".snatch-highlight").forEach((el) =>
+        el.classList.remove("snatch-highlight")
+      );
       // Re-compact every player's table
       this._compactTableRows(document.getElementById("mytable"));
       Object.keys(this.othersStocks).forEach((id) => {
@@ -344,6 +331,13 @@ define([
 
     onEnteringState: function (stateName, args) {
       switch (stateName) {
+        case "PlayerTurn":
+          if (this.isCurrentPlayerActive()) {
+            this.handStock.setSelectionMode("multiple");
+            this.handStock.onSelectionChange = (selection) =>
+              this._onHandSelectionChange(selection);
+          }
+          break;
         case "RobbedPlayerDraw":
           if (this.isCurrentPlayerActive()) {
             this.poolStock.setSelectionMode("single");
@@ -359,13 +353,14 @@ define([
 
     onLeavingState: function (stateName) {
       switch (stateName) {
+        case "PlayerTurn":
+          this.handStock.unselectAll();
+          this.handStock.onSelectionChange = null;
+          break;
         case "RobbedPlayerDraw":
           this.poolStock.setSelectionMode("none");
           this.poolStock.onSelectionChange = null;
           this.poolStock.unselectAll();
-          break;
-        case "PlayerTurn":
-          this.handStock.unselectAll();
           break;
       }
     },
@@ -378,77 +373,51 @@ define([
       return type == "14" ? "X" : type;
     },
 
-    _playOptionDescription: function (numType, numCount, jokerCount) {
-      const numLabel = this._cardLabel(String(numType));
-      const prefix = (n) => (n === 1 ? "" : n + "×");
-      if (jokerCount === 0) return `Play ${prefix(numCount)}${numLabel}`;
-      return `Play ${prefix(numCount)}${numLabel} + ${prefix(jokerCount)}X`;
-    },
-
-    _buildPlayOptions: function (numCount, jokerCount) {
-      const options = [];
-      for (let i = 1; i <= numCount; i++) {
-        options.push({ numCount: i, jokerCount: 0 });
-        for (let k = 1; k <= jokerCount; k++) {
-          options.push({ numCount: i, jokerCount: k });
-        }
-      }
-      return options;
-    },
-
-    _showConfirmButtons: function (stateName, args, numberCards, jokerCards, option, numType) {
+    _onHandSelectionChange: function (selection) {
       this.statusBar.removeActionButtons();
-      this.statusBar.addActionButton(_("← Back"), () =>
-        this._showCardQuantityButtons(stateName, args, numType)
-      );
-      this.statusBar.addActionButton(_("Confirm"), () => {
-        const selectedCards = [
-          ...numberCards.slice(0, option.numCount),
-          ...jokerCards.slice(0, option.jokerCount),
-        ];
-        this.bgaPerformAction("actPlayCard", {
-          selectedCards: JSON.stringify(selectedCards),
-        }).then(() => {
-          this.handStock.unselectAll();
-        });
-      });
-    },
+      if (selection.length === 0) return;
 
-    _showCardQuantityButtons: function (stateName, args, numType) {
-      const allCards    = Object.values(args.hand).sort((a, b) => a.type - b.type);
-      const numberCards = allCards.filter((c) => c.type == numType);
-      const jokerCards  = numType == "14" ? [] : allCards.filter((c) => c.type == "14");
+      const nonJokers = selection.filter((c) => parseInt(c.type) !== 14);
+      const types     = [...new Set(nonJokers.map((c) => String(c.type)))];
 
-      this.statusBar.removeActionButtons();
-      this.statusBar.addActionButton(_("← Back"), () =>
-        this.onUpdateActionButtons(stateName, args)
-      );
-
-      this._buildPlayOptions(numberCards.length, jokerCards.length).forEach((option) => {
-        const label = this._playOptionDescription(numType, option.numCount, option.jokerCount);
-        this.statusBar.addActionButton(label, () =>
-          this._showConfirmButtons(stateName, args, numberCards, jokerCards, option, numType)
+      if (types.length > 1) {
+        this.statusBar.addActionButton(
+          _("All cards must be the same number — Clear selection"),
+          () => this.handStock.unselectAll()
         );
+        return;
+      }
+
+      // Build label: e.g. "3×5 + 2×X" or "2×X"
+      const jokerCount = selection.length - nonJokers.length;
+      const numType    = types[0];
+      const numCount   = nonJokers.length;
+      const rep        = (n, lbl) => (n > 1 ? `${n}×${lbl}` : lbl);
+
+      let summary;
+      if (numType) {
+        summary = rep(numCount, this._cardLabel(numType));
+        if (jokerCount > 0) summary += ` + ${rep(jokerCount, "X")}`;
+      } else {
+        summary = rep(jokerCount, "X");
+      }
+
+      this.statusBar.addActionButton(`${_("Play")} ${summary}`, () => {
+        this.bgaPerformAction("actPlayCard", {
+          selectedCards: JSON.stringify(selection),
+        }).then(() => this.handStock.unselectAll());
       });
+      this.statusBar.addActionButton(_("Clear"), () => this.handStock.unselectAll());
     },
 
     onUpdateActionButtons: function (stateName, args) {
       if (!this.isCurrentPlayerActive()) return;
 
       switch (stateName) {
-        case "PlayerTurn": {
-          const uniqueTypes = Object.values(args.hand)
-            .sort((a, b) => a.type - b.type)
-            .filter((c, i, arr) => i === 0 || c.type !== arr[i - 1].type);
-
+        case "PlayerTurn":
+          // Buttons are driven by hand card selection — see _onHandSelectionChange
           this.statusBar.removeActionButtons();
-          uniqueTypes.forEach((card) => {
-            this.statusBar.addActionButton(this._cardLabel(card.type), () =>
-              this._showCardQuantityButtons(stateName, args, card.type)
-            );
-          });
           break;
-        }
 
         case "ActivePlayerSnatch": {
           const snatch     = args.snatch;
@@ -473,11 +442,21 @@ define([
         }
 
         case "RobbedPlayerDecision": {
+          const rowIdx  = args.snatch?.row_idx;
+          const snatchIds = new Set((args.snatch?.card_ids ?? []).map(String));
+          let cardSummary = "";
+          if (rowIdx !== undefined && snatchIds.size > 0) {
+            const cards = (this.tableStocks[rowIdx]?.getCards() ?? [])
+              .filter((c) => snatchIds.has(String(c.id)));
+            if (cards.length > 0) {
+              cardSummary = " (" + cards.map((c) => this._cardLabel(c.type)).join(", ") + ")";
+            }
+          }
           this.statusBar.removeActionButtons();
-          this.statusBar.addActionButton(_("Pick up"), () =>
+          this.statusBar.addActionButton(_("Pick up") + cardSummary, () =>
             this.bgaPerformAction("actPickUp", {})
           );
-          this.statusBar.addActionButton(_("Discard and draw"), () =>
+          this.statusBar.addActionButton(_("Discard and draw") + cardSummary, () =>
             this.bgaPerformAction("actDiscard", {})
           );
           break;
@@ -485,12 +464,23 @@ define([
 
         case "RobbedPlayerDraw": {
           const drawCount = args.draw_count ?? 0;
+          const deckCount = args.deck_count ?? 0;
+          const poolCount = Object.keys(args.pool ?? {}).length;
           this.statusBar.removeActionButtons();
-          this.statusBar.addActionButton(
-            `${_("Draw from deck")} (${drawCount} remaining)`,
-            () => this.bgaPerformAction("actDrawCard", { cardId: 0 })
-          );
-          // Pool cards are clickable via the selection handler in onEnteringState
+
+          if (drawCount > 0 && deckCount === 0 && poolCount === 0) {
+            // Nothing left to draw — auto-advance
+            this.bgaPerformAction("actDrawCard", { cardId: 0 });
+            break;
+          }
+
+          if (deckCount > 0 && drawCount > 0) {
+            this.statusBar.addActionButton(
+              `${_("Draw from deck")} (${drawCount} remaining)`,
+              () => this.bgaPerformAction("actDrawCard", { cardId: 0 })
+            );
+          }
+          // Pool cards are always clickable via the selection handler in onEnteringState
           break;
         }
       }
@@ -550,6 +540,10 @@ define([
           tableStock.removeCards(cards);
         }
       }
+      const rowEl = document.getElementById(
+        (robbedId === parseInt(this.gamedatas.current_player.id) ? "mytable" : robbedId + "_table") + "_row_" + row_idx
+      );
+      if (rowEl) rowEl.classList.remove("snatch-highlight");
       this._cleanRowEl(robbedId, row_idx);
       this._refreshAll();
     },
