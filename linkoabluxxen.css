@@ -238,6 +238,12 @@
   margin-top: -150px;
 }
 
+/* Desaturate cards in every non-topmost row so the most recent row stands out */
+[id^="mytable_row_"]:has(.bga-cards_card) ~ [id^="mytable_row_"]:has(.bga-cards_card) .bga-cards_card,
+[id*="_table_row_"]:has(.bga-cards_card) ~ [id*="_table_row_"]:has(.bga-cards_card) .bga-cards_card {
+  filter: grayscale(100%);
+}
+
 #discard,
 #myhand {
   min-height: 199px;
