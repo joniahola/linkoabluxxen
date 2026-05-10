@@ -253,8 +253,71 @@
   margin-left: 0;
 }
 
-.table-area {
+/* ── Combined circular table ── */
+.combined-table-area {
   overflow: visible;
+  padding: 0;
+}
+
+.combined-table-inner {
+  position: relative;
+  width: 100%;
+  height: 700px;
+}
+
+.combined-player {
+  position: absolute;
+  max-width: 340px;
+  text-align: center;
+}
+
+.combined-player-label {
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+/* ── Position variants ── */
+
+/* 2p: other player / 4p: next-next */
+.cpos-top-center {
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+/* 5p: next-next (slightly left of center) */
+.cpos-top-left {
+  top: 10px;
+  left: 35%;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+/* 5p: next-next-next (slightly right of center) */
+.cpos-top-right {
+  top: 10px;
+  left: 65%;
+  transform: translateX(-50%) rotate(180deg);
+}
+
+/* 3p/4p/5p: next player */
+.cpos-left-center {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+/* 3p/4p/5p: previous player */
+.cpos-right-center {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+/* current player — always bottom center */
+.cpos-bottom-center {
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .hand-count-badge {

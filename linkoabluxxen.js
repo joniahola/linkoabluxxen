@@ -67,18 +67,39 @@ define([
         .join("");
     },
 
+    _getPlayersInTurnOrder: function (gamedatas) {
+      const currentId = parseInt(gamedatas.current_player.id);
+      const players = Object.values(gamedatas.players).sort(
+        (a, b) => parseInt(a.player_no) - parseInt(b.player_no)
+      );
+      const idx = players.findIndex((p) => parseInt(p.id) === currentId);
+      return [...players.slice(idx), ...players.slice(0, idx)];
+    },
+
     _generatePlayAreasSetup: function (gamedatas) {
       const currentId = parseInt(gamedatas.current_player.id);
+      const ordered   = this._getPlayersInTurnOrder(gamedatas);
+      const n         = ordered.length;
 
-      const otherAreas = Object.keys(gamedatas.players_hands)
-        .filter((id) => parseInt(id) !== currentId)
-        .map((id) => {
-          const player = gamedatas.players_hands[id];
+      const positionsByCount = {
+        2: ["bottom-center", "top-center"],
+        3: ["bottom-center", "left-center", "right-center"],
+        4: ["bottom-center", "left-center", "top-center", "right-center"],
+        5: ["bottom-center", "left-center", "top-left", "top-right", "right-center"],
+      };
+      const positions = positionsByCount[n] || positionsByCount[4];
+
+      const playerSections = ordered
+        .map((player, i) => {
+          const pid   = parseInt(player.id);
+          const isMe  = pid === currentId;
+          const prefix = isMe ? "mytable" : pid + "_table";
+          const badge  = isMe ? "" : `<span id="${pid}_hand_count_badge" class="hand-count-badge"></span>`;
+          const label  = isMe ? _("My table") : player.name;
           return `
-            <div id="${id}_table_wrap" class="whiteblock table-area">
-              <b>${player.name} ${_("table")}</b>
-              <span id="${id}_hand_count_badge" class="hand-count-badge"></span>
-              <div id="${id}_table">${this._makeTableRows(id + "_table")}</div>
+            <div id="cplayer_${pid}" class="combined-player cpos-${positions[i]}">
+              <div class="combined-player-label"><b>${label}</b>${badge}</div>
+              <div id="${prefix}">${this._makeTableRows(prefix)}</div>
             </div>
           `;
         })
@@ -91,15 +112,15 @@ define([
           <b>${_("Pool")}</b> <span id="deck_counter_el" class="deck-count-label">(${gamedatas.deck_count ?? 0} ${_("cards in deck")})</span>
           <div id="pool" class="pool-cards"></div>
         </div>
-        <div id="mytable_wrap" class="whiteblock table-area">
-          <b>${_("My table")}</b>
-          <div id="mytable">${this._makeTableRows("mytable")}</div>
+        <div id="combined_table_area" class="whiteblock combined-table-area">
+          <div id="combined_table_inner" class="combined-table-inner">
+            ${playerSections}
+          </div>
         </div>
         <div id="myhand_wrap" class="whiteblock hand-area">
           <b>${_("My hand")}</b>
           <div id="myhand"></div>
         </div>
-        ${otherAreas}
         <div id="discard_area" class="whiteblock discard-area">
           <b>${_("Discard")}</b>
           <div id="discard" class="card-stock"></div>
