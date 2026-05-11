@@ -250,8 +250,9 @@ define([
       if (!stats) return;
 
       const score = stats.table - stats.hand;
-      if (this.scoreCtrl && this.scoreCtrl[playerId]) {
-        this.scoreCtrl[playerId].setValue(score);
+      const scoreCounter = this.bga?.playerPanels?.getScoreCounter(playerId);
+      if (scoreCounter) {
+        scoreCounter.setValue(score);
       }
 
       const ctr = this[`_handCtr_${playerId}`];
