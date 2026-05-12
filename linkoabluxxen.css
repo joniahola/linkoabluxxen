@@ -1,7 +1,7 @@
 /**
  *------
  * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
- * LinkoAbluxxen implementation : © <Your name here> <Your email address here>
+ * LinkoAbluxxen implementation : © Joni Ahola <aholanjoni@gmail.com>
  *
  * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
  * See http://en.boardgamearena.com/#!doc/Studio for more information.
@@ -10,34 +10,34 @@
  * linkoabluxxen.css
  *
  * LinkoAbluxxen stylesheet
- *
+ *§ 
  */
 
 /*
     This is the CSS stylesheet of your game User Interface.
-    
+
     Styles defined on this file will be applied to the HTML elements you define in your
     HTML template (linkoabluxxen_linkoabluxxen.tpl), and to HTML elements you create dynamically
     (in linkoabluxxen.js).
-    
+
     Usually, you are using CSS to:
-    
+
     1°) define the overall layout of your game
         (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
 
     2°) create your CSS-sprites:
         All images of your games should be gathered into a small number of image files. Then, using
-        background-image and background-position CSS properties, you create HTML blocks that can 
+        background-image and background-position CSS properties, you create HTML blocks that can
         display these images correctly (see example below).
-    
+
     3°) ... anything else:
         It is really easy to add and remove CSS classes dynamically from your Javascript with
         dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
         (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
         very often, using CSS classes for the logic of your user interface allow you to do complex
         thing easily.
-        
-        
+
+
      Note: on the production platform, this file will be compressed and comments will be removed.
            Consequently, don't hesitate to put as many comments as necessary.
 */
@@ -46,106 +46,88 @@
 
 /********* You can start writing your CSS below this line: **********/
 
-/*
-    Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
 
-    .white_token {
-        background-image: url('img/tokens.png');
-        background-position: 0px 0px;
-    }
-    .black_token {
-        background-image: url('img/tokens.png');
-        background-position: -20px 0px;
-    }
-    .token {
-        width: 20px;
-        height: 20px;
-        background-repeat: none;
-    }
-*/
-:root {
-  --bga-cards_selected-card_outline-color: transparent;
-}
-
-.card-front {
+/* ── Card sprites ── */
+/* .lnk-card-front is applied automatically by BGA Cards Manager (type: "lnk-card") */
+.lnk-card-front {
   background-image: url("img/cards.png") !important;
 }
 
-.card--back {
+.lnk-card--back {
   background-position: -306px -10px !important;
 }
 
-.card-front[data-type="14"],
-.card--14 {
+.lnk-card-front[data-type="14"],
+.lnk-card--14 {
   background-position: -10px -448px !important;
 }
 
-.card-front[data-type="12"],
-.card--12 {
+.lnk-card-front[data-type="12"],
+.lnk-card--12 {
   background-position: -602px -448px !important;
 }
 
-.card-front[data-type="7"],
-.card--7 {
+.lnk-card-front[data-type="7"],
+.lnk-card--7 {
   background-position: -10px -229px !important;
 }
 
-.card-front[data-type="8"],
-.card--8 {
+.lnk-card-front[data-type="8"],
+.lnk-card--8 {
   background-position: -306px -448px !important;
 }
 
-.card-front[data-type="3"],
-.card--3 {
+.lnk-card-front[data-type="3"],
+.lnk-card--3 {
   background-position: -158px -10px !important;
 }
 
-.card-front[data-type="1"],
-.card--1 {
+.lnk-card-front[data-type="1"],
+.lnk-card--1 {
   background-position: -454px -229px !important;
 }
 
-.card-front[data-type="10"],
-.card--10 {
+.lnk-card-front[data-type="10"],
+.lnk-card--10 {
   background-position: -602px -10px !important;
 }
 
-.card-front[data-type="13"],
-.card--13 {
+.lnk-card-front[data-type="13"],
+.lnk-card--13 {
   background-position: -454px -10px !important;
 }
 
-.card-front[data-type="9"],
-.card--9 {
+.lnk-card-front[data-type="9"],
+.lnk-card--9 {
   background-position: -602px -229px !important;
 }
 
-.card-front[data-type="5"],
-.card--5 {
+.lnk-card-front[data-type="5"],
+.lnk-card--5 {
   background-position: -158px -229px !important;
 }
 
-.card-front[data-type="11"],
-.card--11 {
+.lnk-card-front[data-type="11"],
+.lnk-card--11 {
   background-position: -158px -448px !important;
 }
 
-.card-front[data-type="2"],
-.card--2 {
+.lnk-card-front[data-type="2"],
+.lnk-card--2 {
   background-position: -306px -229px !important;
 }
 
-.card--PAW {
+.lnk-card--PAW {
   background-position: -454px -448px !important;
 }
 
-.card-front[data-type="6"],
-.card--6 {
+.lnk-card-front[data-type="6"],
+.lnk-card--6 {
   background-position: -750px -10px !important;
 }
 
-.card-front[data-type="4"],
-.card--4 {
+.lnk-card-front[data-type="4"],
+.lnk-card--4 {
   background-position: -10px -10px !important;
 }
 
@@ -153,13 +135,14 @@
   box-shadow: none !important;
 }
 
-.linko-play-area {
+/* ── Layout ── */
+.lnk-play-area {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.center-area {
+.lnk-center-area {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
@@ -167,24 +150,24 @@
   align-items: flex-start;
 }
 
-.card-stock-wrap {
+.lnk-card-stock-wrap {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 5px;
 }
 
-.stock-label {
+.lnk-stock-label {
   font-weight: bold;
   font-size: 14px;
 }
 
-.pool-area {
+.lnk-pool-area {
   min-width: 300px;
   min-height: 120px;
 }
 
-.pool-cards {
+.lnk-pool-cards {
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
@@ -193,11 +176,16 @@
   padding: 10px;
 }
 
-.hand-area {
+.lnk-hand-area {
   margin-top: 20px;
 }
 
-.counter {
+.whiteblock.lnk-hand-active {
+  position: relative;
+  background: rgba(255,255,0,0.5);
+}
+
+.lnk-counter {
   background: #333;
   color: white;
   border-radius: 50%;
@@ -210,24 +198,25 @@
   font-weight: bold;
 }
 
-.card-stock .bga-cards_selectable-card {
-  outline: none !important;
-}
-
 #myhand > .bga-cards_card {
   transition: transform 0.2s ease, outline 0.2s ease;
 }
 
 #myhand .bga-cards_selected-card,
-#myhand .bga-cards_selected-card:focus,
-#pool .bga-cards_selected-card,
-#pool .bga-cards_selected-card:focus {
-  transform: translateY(-24px);
+#myhand .bga-cards_selected-card:focus {
+  transform: translateY(-16px);
   outline: none !important;
   box-shadow: none !important;
 }
 
-.snatch-highlight {
+#pool .bga-cards_selected-card,
+#pool .bga-cards_selected-card:focus {
+  transform: translateY(-24px);
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.lnk-snatch-highlight {
   outline: 3px solid #e74c3c;
   border-radius: 4px;
   background: rgba(231, 76, 60, 0.08);
@@ -257,7 +246,7 @@
 /* Desaturate cards in every non-topmost row so the most recent row stands out */
 [id^="mytable_row_"]:has(.bga-cards_card) ~ [id^="mytable_row_"]:has(.bga-cards_card) .bga-cards_card,
 [id*="_table_row_"]:has(.bga-cards_card) ~ [id*="_table_row_"]:has(.bga-cards_card) .bga-cards_card {
-  filter: grayscale(100%);
+  filter: grayscale(85%);
 }
 
 #discard,
@@ -284,38 +273,48 @@
 }
 
 /* ── Combined player table — 2 columns, 1 column on small screens ── */
-.combined-table-inner {
+.lnk-combined-table-inner {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
   padding: 8px;
 }
 
-.combined-player {
+.lnk-combined-player {
   width: calc(50% - 6px);
 }
 
 @media (max-width: 1049px) {
-  .combined-player {
+  .lnk-combined-player {
     width: 100%;
   }
 }
 
-.combined-player-label {
+.lnk-combined-player-label {
   margin-bottom: 4px;
   white-space: nowrap;
 }
 
-
-.hand-count-badge {
+.lnk-hand-count-badge {
   font-size: 12px;
   color: #666;
   margin-left: 8px;
 }
 
-.deck-count-label {
+.lnk-deck-count-label {
   font-size: 12px;
   color: #666;
   font-weight: normal;
 }
+
+#myhand.card-stock .bga-cards_selectable-card,
+#pool.card-stock .bga-cards_selectable-card {
+  outline: none !important;
+}
+
+
+.whiteblock {
+  background: rgba(255, 255, 255, 0.5);
+}
+
 

@@ -58,6 +58,7 @@ class PlayerTurn extends GameState
         $rowIdx  = $this->game->getNextPlayTableRowIdx($activePlayerId);
         $cardIds = array_column($selectedCards, 'id');
         $this->game->cards->moveCards($cardIds, 'playertable' . $rowIdx, $activePlayerId);
+        $this->game->playerStats->inc('cards_stacked', count($selectedCards), $activePlayerId);
 
         // Notify all players
         $cardLabels = array_map(fn($c) => $c['type'] == 14 ? 'X' : (string)$c['type'], $selectedCards);

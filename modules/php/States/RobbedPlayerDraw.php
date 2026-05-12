@@ -89,6 +89,7 @@ class RobbedPlayerDraw extends GameState
                 'from_pool'   => true,
                 'card'        => $card,
             ]);
+            $this->game->playerStats->inc('cards_drawn_from_pool', 1, $activePlayerId);
         }
 
         $drawCount--;

@@ -45,7 +45,7 @@ define([
       });
       this.cardsManager = new BgaCards.Manager({
         animationManager: this.animationManager,
-        type: "card",
+        type: "lnk-card",
         getId: (card) => card.id,
         isCardVisible: () => true,
         cardWidth: 128,
@@ -79,11 +79,11 @@ define([
           const pid    = parseInt(player.id);
           const isMe   = pid === currentId;
           const prefix = isMe ? "mytable" : pid + "_table";
-          const badge  = `<span id="${pid}_hand_count_badge" class="hand-count-badge"></span>`;
+          const badge  = `<span id="${pid}_hand_count_badge" class="lnk-hand-count-badge"></span>`;
           const label  = isMe ? `<u>${player.name}</u>` : player.name;
           return `
-            <div id="cplayer_${pid}" class="combined-player${isMe ? " combined-player--me" : ""}">
-              <div class="combined-player-label"><b>${label}</b>${badge}</div>
+            <div id="cplayer_${pid}" class="lnk-combined-player${isMe ? " lnk-combined-player--me" : ""}">
+              <div class="lnk-combined-player-label"><b>${label}</b>${badge}</div>
               <div id="${prefix}">${this._makeTableRows(prefix)}</div>
             </div>
           `;
@@ -93,27 +93,27 @@ define([
       document.getElementById("game_play_area").insertAdjacentHTML(
         "beforeend",
         `
-        <div id="combined_table_area" class="whiteblock combined-table-area">
-          <div id="combined_table_inner" class="combined-table-inner">
+        <div id="combined_table_area" class="whiteblock lnk-combined-table-area">
+          <div id="combined_table_inner" class="lnk-combined-table-inner">
             ${playerSections}
           </div>
         </div>
-        <div id="myhand_wrap" class="whiteblock hand-area">
+        <div id="myhand_wrap" class="whiteblock lnk-hand-area">
           <b>${_("My hand")}</b>
           <div id="myhand"></div>
         </div>
-        <div id="pool_area" class="whiteblock pool-area">
-          <b>${_("Pool")}</b> <span id="deck_counter_el" class="deck-count-label">(${gamedatas.deck_count ?? 0} ${_("cards in deck")})</span>
-          <div id="pool" class="pool-cards"></div>
+        <div id="pool_area" class="whiteblock lnk-pool-area">
+          <b>${_("Pool")}</b> <span id="deck_counter_el" class="lnk-deck-count-label">(${gamedatas.deck_count ?? 0} ${_("cards in deck")})</span>
+          <div id="pool" class="lnk-pool-cards"></div>
         </div>
-        <div id="discard_area" class="whiteblock discard-area">
+        <div id="discard_area" class="whiteblock lnk-discard-area">
           <b>${_("Discard")}</b>
-          <div id="discard" class="card-stock"></div>
+          <div id="discard" class="lnk-card-stock"></div>
         </div>
         `
       );
 
-      dojo.addClass("game_play_area", "linko-play-area");
+      dojo.addClass("game_play_area", "lnk-play-area");
     },
 
     _poolSetup: function (gamedatas) {
@@ -142,9 +142,9 @@ define([
       this.handStock = new BgaCards.LineStock(
         this.cardsManager,
         document.getElementById("myhand"),
-        { sort: (a, b) => a.type - b.type }
+        { fanShaped: false, sort: (a, b) => a.type - b.type }
       );
-      this.handStock.setSelectionMode("multiple");
+      this.handStock.setSelectionMode("none");
 
       // Create per-row stocks for current player
       this.tableStocks = [];
@@ -298,8 +298,8 @@ define([
     },
 
     _refreshAll: function () {
-      document.querySelectorAll(".snatch-highlight").forEach((el) =>
-        el.classList.remove("snatch-highlight")
+      document.querySelectorAll(".lnk-snatch-highlight").forEach((el) =>
+        el.classList.remove("lnk-snatch-highlight")
       );
       // Re-compact every player's table
       this._compactTableRows(document.getElementById("mytable"));
@@ -337,9 +337,11 @@ define([
             this.handStock.setSelectionMode("multiple");
             this.handStock.onSelectionChange = (selection) =>
               this._onHandSelectionChange(selection);
+            document.getElementById("myhand_wrap").classList.add("lnk-hand-active");
           }
           break;
         case "RobbedPlayerDraw":
+          this.handStock.setSelectionMode("none");
           if (this.isCurrentPlayerActive()) {
             this.poolStock.setSelectionMode("single");
             this.poolStock.onSelectionChange = (selection) => {
@@ -347,6 +349,7 @@ define([
                 this._onPoolCardSelectedForDraw(selection[0]);
               }
             };
+            document.getElementById("pool_area").classList.add("lnk-hand-active");
           }
           break;
       }
@@ -355,13 +358,19 @@ define([
     onLeavingState: function (stateName) {
       switch (stateName) {
         case "PlayerTurn":
+          this.handStock.setSelectionMode("none");
           this.handStock.unselectAll();
           this.handStock.onSelectionChange = null;
+          document.getElementById("myhand_wrap").classList.remove("lnk-hand-active");
+          break;
+        case "ActivePlayerSnatch":
+          this._refreshAll();
           break;
         case "RobbedPlayerDraw":
           this.poolStock.setSelectionMode("none");
           this.poolStock.onSelectionChange = null;
           this.poolStock.unselectAll();
+          document.getElementById("pool_area").classList.remove("lnk-hand-active");
           break;
       }
     },
@@ -428,16 +437,22 @@ define([
             `${_("Take")} (${snatch.card_count} card(s) from ${robbedName})`,
             () => this.bgaPerformAction("actTakeSnatch", {})
           );
-          this.statusBar.addActionButton(_("Skip"), () =>
-            this.bgaPerformAction("actSkipSnatch", {})
-          );
+          this.statusBar.addActionButton(_("Skip"), () => {
+            if (snatch.player_id) {
+              const rowEl = document.getElementById(
+                snatch.player_id + "_table_row_" + snatch.row_idx
+              );
+              if (rowEl) rowEl.classList.remove("lnk-snatch-highlight");
+            }
+            this.bgaPerformAction("actSkipSnatch", {});
+          });
 
           // Highlight the snatchable row
           if (snatch.player_id) {
             const rowEl = document.getElementById(
               snatch.player_id + "_table_row_" + snatch.row_idx
             );
-            if (rowEl) rowEl.classList.add("snatch-highlight");
+            if (rowEl) rowEl.classList.add("lnk-snatch-highlight");
           }
           break;
         }
@@ -468,12 +483,6 @@ define([
           const deckCount = args.deck_count ?? 0;
           const poolCount = Object.keys(args.pool ?? {}).length;
           this.statusBar.removeActionButtons();
-
-          if (drawCount > 0 && deckCount === 0 && poolCount === 0) {
-            // Nothing left to draw — auto-advance
-            this.bgaPerformAction("actDrawCard", { cardId: 0 });
-            break;
-          }
 
           if (deckCount > 0 && drawCount > 0) {
             this.statusBar.addActionButton(
@@ -544,7 +553,7 @@ define([
       const rowEl = document.getElementById(
         (robbedId === parseInt(this.gamedatas.current_player.id) ? "mytable" : robbedId + "_table") + "_row_" + row_idx
       );
-      if (rowEl) rowEl.classList.remove("snatch-highlight");
+      if (rowEl) rowEl.classList.remove("lnk-snatch-highlight");
       this._cleanRowEl(robbedId, row_idx);
       this._refreshAll();
     },
@@ -554,7 +563,7 @@ define([
       const { robbed_id, row_idx } = this._args(notif);
       if (robbed_id == null) return;
       const rowEl = document.getElementById(robbed_id + "_table_row_" + row_idx);
-      if (rowEl) rowEl.classList.remove("snatch-highlight");
+      if (rowEl) rowEl.classList.remove("lnk-snatch-highlight");
       this._refreshAll();
     },
 
@@ -567,7 +576,7 @@ define([
       const handStock  = this._getHandStock(pid);
 
       if (tableStock) {
-        const cards = tableStock.getCards().filter((c) => card_ids.includes(parseInt(c.id)));
+        const cards = tableStock.getCards();
         if (cards.length > 0) {
           if (this._playerStats[pid]) {
             this._playerStats[pid].table -= cards.length;
@@ -592,7 +601,7 @@ define([
       const tableStock = this._getTableStock(pid, row_idx);
 
       if (tableStock) {
-        const cards = tableStock.getCards().filter((c) => card_ids.includes(parseInt(c.id)));
+        const cards = tableStock.getCards();
         if (cards.length > 0) {
           if (this._playerStats[pid]) this._playerStats[pid].table -= cards.length;
           await this.discardStock.addCards(cards);

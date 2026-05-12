@@ -1,1 +1,29 @@
-{}
+{
+  "player": {
+    "cards_stacked": {
+      "id": 10,
+      "name": "Cards stacked on table",
+      "type": "int",
+      "display": "limited"
+    },
+    "snatches_taken": {
+      "id": 11,
+      "name": "Snatches taken",
+      "type": "int",
+      "display": "limited"
+    },
+    "snatches_declined": {
+      "id": 12,
+      "name": "Snatches declined",
+      "type": "int",
+      "display": "limited"
+    },
+    "cards_drawn_from_pool": {
+      "id": 13,
+      "name": "Cards drawn from pool",
+      "type": "int",
+      "display": "limited"
+    }
+  },
+  "table": {}
+}

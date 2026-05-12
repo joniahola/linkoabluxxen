@@ -24,6 +24,7 @@ class PrepareRobbed extends \Bga\GameFramework\States\GameState
     {
         $robbedId = intval($this->globals->get('robbed_player_id', 0));
         $this->game->gamestate->changeActivePlayer($robbedId);
+        $this->game->giveExtraTime($robbedId);
 
         $drawForRobbed = intval($this->globals->get('draw_for_robbed', 0));
         if ($drawForRobbed === 1) {

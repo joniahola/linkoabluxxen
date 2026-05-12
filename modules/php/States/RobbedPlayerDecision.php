@@ -73,9 +73,15 @@ class RobbedPlayerDecision extends GameState
             'row_idx'     => $rowIdx,
         ]);
 
-        $this->globals->set('draw_count', $cardCount);
+        // If both pool and deck are empty, skip drawing entirely
+        $deckEmpty = empty($this->game->cards->getCardsInLocation('deck'));
+        $poolEmpty = empty($this->game->cards->getCardsInLocation('pool'));
+        if ($deckEmpty && $poolEmpty) {
+            $this->globals->set('draw_count', 0);
+            return AdvanceSnatch::class;
+        }
 
-        // Robbed player is already active, go directly to draw state
+        $this->globals->set('draw_count', $cardCount);
         return RobbedPlayerDraw::class;
     }
 

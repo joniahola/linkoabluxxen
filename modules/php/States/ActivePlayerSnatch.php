@@ -6,7 +6,6 @@ namespace Bga\Games\LinkoAbluxxen\States;
 use Bga\GameFramework\StateType;
 use Bga\GameFramework\States\GameState;
 use Bga\GameFramework\States\PossibleAction;
-use Bga\GameFramework\UserException;
 use Bga\Games\LinkoAbluxxen\Game;
 
 /**
@@ -73,6 +72,7 @@ class ActivePlayerSnatch extends GameState
         $this->globals->set('robbed_player_id', $robbedId);
         $this->globals->set('draw_count', $cardCount);
         $this->globals->set('draw_for_robbed', 1);
+        $this->game->playerStats->inc('snatches_taken', 1, $activePlayerId);
 
         return PrepareRobbed::class;
     }
@@ -95,6 +95,7 @@ class ActivePlayerSnatch extends GameState
 
         $this->globals->set('robbed_player_id', $robbedId);
         $this->globals->set('draw_for_robbed', 0);
+        $this->game->playerStats->inc('snatches_declined', 1, $activePlayerId);
 
         return PrepareRobbed::class;
     }
