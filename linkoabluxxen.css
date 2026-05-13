@@ -182,7 +182,8 @@
 
 .whiteblock.lnk-hand-active {
   position: relative;
-  background: rgba(255,255,0,0.5);
+  background: rgba(255,255,175,0.5);
+  border: 4px dashed orange;
 }
 
 .lnk-counter {
@@ -217,9 +218,10 @@
 }
 
 .lnk-snatch-highlight {
-  outline: 3px solid #e74c3c;
-  border-radius: 4px;
+  outline: 4px dashed #e74c3c;
+  border-radius: 0;
   background: rgba(231, 76, 60, 0.08);
+  padding: 1rem 0;
 }
 
 /* Compact card overlap: only ~25% of each card visible, left-to-right (all except Pool) */
@@ -293,6 +295,15 @@
 .lnk-combined-player-label {
   margin-bottom: 4px;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+}
+
+.lnk-active-avatar {
+  width: 22px;
+  height: 22px;
 }
 
 .lnk-hand-count-badge {
@@ -317,4 +328,20 @@
   background: rgba(255, 255, 255, 0.5);
 }
 
+#mytable {
+  background-color: rgba(255, 255, 225, 0.25);
+}
 
+.lnk-combined-player-label + div:has(.bga-cards_card) {
+  padding: 1rem 0;
+}
+
+.lnk-active-label b {
+  text-decoration: underline;
+}
+
+#myhand,
+#pool,
+#discard {
+  padding: 1rem 0;
+}

@@ -71,6 +71,12 @@ class PlayerTurn extends GameState
             'row_idx'     => $rowIdx,
         ]);
 
+        // If the player played their last cards, end their turn immediately — no snatching
+        $remainingHand = $this->game->cards->getCardsInLocation('hand', $activePlayerId);
+        if (empty($remainingHand)) {
+            return NextPlayer::class;
+        }
+
         // Compute snatches
         $snatches = $this->game->computeSnatches($activePlayerId, $selectedCards);
 

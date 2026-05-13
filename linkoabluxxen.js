@@ -80,10 +80,11 @@ define([
           const isMe   = pid === currentId;
           const prefix = isMe ? "mytable" : pid + "_table";
           const badge  = `<span id="${pid}_hand_count_badge" class="lnk-hand-count-badge"></span>`;
-          const label  = isMe ? `<u>${player.name}</u>` : player.name;
+          const label  = isMe ? `You` : player.name;
+          const activeAvatar = `<img src="https://static.studio.boardgamearena.com/data/themereleases/260507-0859/img/layout/active_player_nonack.gif" alt="" class="avatar avatar_active lnk-active-avatar" id="avatar_active_${pid}" style="display:none">`;
           return `
             <div id="cplayer_${pid}" class="lnk-combined-player${isMe ? " lnk-combined-player--me" : ""}">
-              <div class="lnk-combined-player-label"><b>${label}</b>${badge}</div>
+              <div class="lnk-combined-player-label"><b>${label}</b>${badge}${activeAvatar}</div>
               <div id="${prefix}">${this._makeTableRows(prefix)}</div>
             </div>
           `;
@@ -290,6 +291,19 @@ define([
       });
     },
 
+    _setActivePlayerIndicator: function (activePlayerId) {
+      document.querySelectorAll(".lnk-active-avatar").forEach((el) => {
+        var player_id = parseInt(el.id.replace("avatar_active_", ""));
+        if(player_id === activePlayerId) {
+          el.style.display = "";
+          el.closest('.lnk-combined-player-label').classList.add('lnk-active-label');
+        } else {
+          el.style.display = player_id === activePlayerId ? "" : "none";
+          el.closest('.lnk-combined-player-label').classList.remove('lnk-active-label');
+        }
+      });
+    },
+
     _cleanRowEl: function (pid, rowIdx) {
       const currentId = parseInt(this.gamedatas.current_player.id);
       const prefix    = pid === currentId ? "mytable" : pid + "_table";
@@ -331,6 +345,9 @@ define([
     // -------------------------------------------------------------------------
 
     onEnteringState: function (stateName, args) {
+      const activeId = parseInt(args?.active_player ?? 0);
+      if (activeId) this._setActivePlayerIndicator(activeId);
+
       switch (stateName) {
         case "PlayerTurn":
           if (this.isCurrentPlayerActive()) {
