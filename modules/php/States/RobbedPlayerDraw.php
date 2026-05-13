@@ -103,7 +103,13 @@ class RobbedPlayerDraw extends GameState
 
     function zombie(int $playerId): string
     {
-        // Zombie draws from deck
+        $deckCards = $this->game->cards->getCardsInLocation('deck');
+        if (empty($deckCards)) {
+            $poolCards = $this->game->cards->getCardsInLocation('pool');
+            if (!empty($poolCards)) {
+                return $this->actDrawCard((int) array_key_first($poolCards), $playerId);
+            }
+        }
         return $this->actDrawCard(0, $playerId);
     }
 }
