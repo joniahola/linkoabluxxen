@@ -29,10 +29,8 @@ define([
       this.setupNotifications();
 
       if (this.isSpectator) {
-        document.getElementById("myhand_wrap").style.display = "none";
+        document.getElementById("myhand_wrap")?.style.setProperty("display", "none");
       }
-
-      window.linko = { game: this, gamedatas };
     },
 
     // -------------------------------------------------------------------------
@@ -68,7 +66,7 @@ define([
     },
 
     _generatePlayAreasSetup: function (gamedatas) {
-      const currentId = parseInt(gamedatas.current_player.id);
+      const currentId = parseInt(gamedatas.current_player?.id ?? 0);
       // Sort by player_no so tables match the game-start turn order (player 1 first)
       const reordered = Object.values(gamedatas.players).sort(
         (a, b) => parseInt(a.player_no) - parseInt(b.player_no)
@@ -80,7 +78,7 @@ define([
           const isMe   = pid === currentId;
           const prefix = isMe ? "mytable" : pid + "_table";
           const badge  = `<span id="${pid}_hand_count_badge" class="lnk-hand-count-badge"></span>`;
-          const label  = isMe ? `You` : player.name;
+          const label  = isMe ? _("You") : player.name;
           const activeAvatar = `<img src="https://static.studio.boardgamearena.com/data/themereleases/260507-0859/img/layout/active_player_nonack.gif" alt="" class="avatar avatar_active lnk-active-avatar" id="avatar_active_${pid}" style="display:none">`;
           return `
             <div id="cplayer_${pid}" class="lnk-combined-player${isMe ? " lnk-combined-player--me" : ""}">
@@ -140,6 +138,12 @@ define([
     },
 
     _currentPlayerSetup: function (gamedatas) {
+      if (this.isSpectator) {
+        this.handStock = null;
+        this.tableStocks = [];
+        return;
+      }
+
       this.handStock = new BgaCards.LineStock(
         this.cardsManager,
         document.getElementById("myhand"),
@@ -160,13 +164,13 @@ define([
       }
 
       // Populate hand
-      const hand = gamedatas.current_player.hand
+      const hand = gamedatas.current_player?.hand
         ? Object.values(gamedatas.current_player.hand)
         : [];
       if (hand.length > 0) this.handStock.addCards(hand);
 
       // Populate table rows
-      const playertables = gamedatas.current_player.playertables || [];
+      const playertables = gamedatas.current_player?.playertables || [];
       playertables.forEach((rowCards, i) => {
         if (rowCards && rowCards.length > 0) {
           this.tableStocks[i].addCards(rowCards);
@@ -177,7 +181,7 @@ define([
     },
 
     _otherPlayersSetup: function (gamedatas) {
-      const currentId = parseInt(gamedatas.current_player.id);
+      const currentId = parseInt(gamedatas.current_player?.id ?? 0);
       this.othersStocks = {};
 
       Object.keys(gamedatas.players_hands).forEach((id) => {
@@ -212,7 +216,7 @@ define([
     },
 
     _playerBoardsSetup: function (gamedatas) {
-      const currentId = parseInt(gamedatas.current_player.id);
+      const currentId = parseInt(gamedatas.current_player?.id ?? 0);
 
       Object.values(gamedatas.players).forEach((player) => {
         const pid = parseInt(player.id);
@@ -275,7 +279,7 @@ define([
     // -------------------------------------------------------------------------
 
     _getTableEl: function (playerId) {
-      const currentId = parseInt(this.gamedatas.current_player.id);
+      const currentId = parseInt(this.gamedatas.current_player?.id ?? 0);
       return parseInt(playerId) === currentId
         ? document.getElementById("mytable")
         : document.getElementById(playerId + "_table");
@@ -296,16 +300,16 @@ define([
         var player_id = parseInt(el.id.replace("avatar_active_", ""));
         if(player_id === activePlayerId) {
           el.style.display = "";
-          el.closest('.lnk-combined-player-label').classList.add('lnk-active-label');
+          el.closest('.lnk-combined-player-label')?.classList.add('lnk-active-label');
         } else {
           el.style.display = player_id === activePlayerId ? "" : "none";
-          el.closest('.lnk-combined-player-label').classList.remove('lnk-active-label');
+          el.closest('.lnk-combined-player-label')?.classList.remove('lnk-active-label');
         }
       });
     },
 
     _cleanRowEl: function (pid, rowIdx) {
-      const currentId = parseInt(this.gamedatas.current_player.id);
+      const currentId = parseInt(this.gamedatas.current_player?.id ?? 0);
       const prefix    = pid === currentId ? "mytable" : pid + "_table";
       const rowEl     = document.getElementById(prefix + "_row_" + rowIdx);
       if (rowEl) rowEl.querySelectorAll(".bga-cards_card").forEach((el) => el.remove());
@@ -313,7 +317,7 @@ define([
 
     _refreshAll: function () {
       document.querySelectorAll(".lnk-snatch-highlight").forEach((el) =>
-        el.classList.remove("lnk-snatch-highlight")
+        el?.classList.remove("lnk-snatch-highlight")
       );
       // Re-compact every player's table
       this._compactTableRows(document.getElementById("mytable"));
@@ -327,7 +331,7 @@ define([
     },
 
     _getTableStock: function (playerId, rowIdx) {
-      const currentId = parseInt(this.gamedatas.current_player.id);
+      const currentId = parseInt(this.gamedatas.current_player?.id ?? 0);
       if (playerId === currentId) {
         return this.tableStocks[rowIdx] ?? null;
       }
@@ -335,7 +339,7 @@ define([
     },
 
     _getHandStock: function (playerId) {
-      const currentId = parseInt(this.gamedatas.current_player.id);
+      const currentId = parseInt(this.gamedatas.current_player?.id ?? 0);
       if (playerId === currentId) return this.handStock;
       return null; // other players' hands are not shown
     },
@@ -354,11 +358,11 @@ define([
             this.handStock.setSelectionMode("multiple");
             this.handStock.onSelectionChange = (selection) =>
               this._onHandSelectionChange(selection);
-            document.getElementById("myhand_wrap").classList.add("lnk-hand-active");
+            document.getElementById("myhand_wrap")?.classList.add("lnk-hand-active");
           }
           break;
         case "RobbedPlayerDraw":
-          this.handStock.setSelectionMode("none");
+          this.handStock?.setSelectionMode("none");
           if (this.isCurrentPlayerActive()) {
             this.poolStock.setSelectionMode("single");
             this.poolStock.onSelectionChange = (selection) => {
@@ -366,7 +370,7 @@ define([
                 this._onPoolCardSelectedForDraw(selection[0]);
               }
             };
-            document.getElementById("pool_area").classList.add("lnk-hand-active");
+            document.getElementById("pool_area")?.classList.add("lnk-hand-active");
           }
           break;
       }
@@ -375,19 +379,19 @@ define([
     onLeavingState: function (stateName) {
       switch (stateName) {
         case "PlayerTurn":
-          this.handStock.setSelectionMode("none");
-          this.handStock.unselectAll();
-          this.handStock.onSelectionChange = null;
-          document.getElementById("myhand_wrap").classList.remove("lnk-hand-active");
+          this.handStock?.setSelectionMode("none");
+          this.handStock?.unselectAll();
+          if (this.handStock) this.handStock.onSelectionChange = null;
+          document.getElementById("myhand_wrap")?.classList.remove("lnk-hand-active");
           break;
         case "ActivePlayerSnatch":
           this._refreshAll();
           break;
         case "RobbedPlayerDraw":
-          this.poolStock.setSelectionMode("none");
-          this.poolStock.onSelectionChange = null;
-          this.poolStock.unselectAll();
-          document.getElementById("pool_area").classList.remove("lnk-hand-active");
+          this.poolStock?.setSelectionMode("none");
+          if (this.poolStock) this.poolStock.onSelectionChange = null;
+          this.poolStock?.unselectAll();
+          document.getElementById("pool_area")?.classList.remove("lnk-hand-active");
           break;
       }
     },
@@ -459,7 +463,7 @@ define([
               const rowEl = document.getElementById(
                 snatch.player_id + "_table_row_" + snatch.row_idx
               );
-              if (rowEl) rowEl.classList.remove("lnk-snatch-highlight");
+              if (rowEl) rowEl?.classList.remove("lnk-snatch-highlight");
             }
             this.bgaPerformAction("actSkipSnatch", {});
           });
@@ -469,7 +473,7 @@ define([
             const rowEl = document.getElementById(
               snatch.player_id + "_table_row_" + snatch.row_idx
             );
-            if (rowEl) rowEl.classList.add("lnk-snatch-highlight");
+            if (rowEl) rowEl?.classList.add("lnk-snatch-highlight");
           }
           break;
         }
@@ -568,9 +572,9 @@ define([
         }
       }
       const rowEl = document.getElementById(
-        (robbedId === parseInt(this.gamedatas.current_player.id) ? "mytable" : robbedId + "_table") + "_row_" + row_idx
+        (robbedId === parseInt(this.gamedatas.current_player?.id ?? 0) ? "mytable" : robbedId + "_table") + "_row_" + row_idx
       );
-      if (rowEl) rowEl.classList.remove("lnk-snatch-highlight");
+      if (rowEl) rowEl?.classList.remove("lnk-snatch-highlight");
       this._cleanRowEl(robbedId, row_idx);
       this._refreshAll();
     },
@@ -580,7 +584,7 @@ define([
       const { robbed_id, row_idx } = this._args(notif);
       if (robbed_id == null) return;
       const rowEl = document.getElementById(robbed_id + "_table_row_" + row_idx);
-      if (rowEl) rowEl.classList.remove("lnk-snatch-highlight");
+      if (rowEl) rowEl?.classList.remove("lnk-snatch-highlight");
       this._refreshAll();
     },
 
@@ -634,7 +638,7 @@ define([
       if (player_id == null) return;
       const pid       = parseInt(player_id);
       const handStock = this._getHandStock(pid);
-      const currentId = parseInt(this.gamedatas.current_player.id);
+      const currentId = parseInt(this.gamedatas.current_player?.id ?? 0);
 
       if (from_pool && card) {
         if (this._playerStats[pid]) this._playerStats[pid].hand += 1;
@@ -652,10 +656,10 @@ define([
     /** Private notification for the player who drew from deck — reveals their card */
     notif_cardDrawnPrivate: async function (notif) {
       const { card } = this._args(notif);
-      if (card) {
-        const pid = parseInt(this.gamedatas.current_player.id);
+      if (card && !this.isSpectator) {
+        const pid = parseInt(this.gamedatas.current_player?.id ?? 0);
         if (this._playerStats[pid]) this._playerStats[pid].hand += 1;
-        await this.handStock.addCard(card);
+        await this.handStock?.addCard(card);
       }
       this._refreshAll();
     },

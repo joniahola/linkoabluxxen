@@ -87,3 +87,6 @@ msgstr "${player_name} zieht eine Karte vom Stapel"
 
 msgid "${player_name} draws ${card_name} from the pool"
 msgstr "${player_name} zieht ${card_name} aus dem Pool"
+
+msgid "You"
+msgstr "Du"

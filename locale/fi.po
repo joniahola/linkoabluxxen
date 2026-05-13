@@ -87,3 +87,6 @@ msgstr "${player_name} nostaa kortin pakasta"
 
 msgid "${player_name} draws ${card_name} from the pool"
 msgstr "${player_name} nostaa ${card_name} poolilta"
+
+msgid "You"
+msgstr "Sinä"
