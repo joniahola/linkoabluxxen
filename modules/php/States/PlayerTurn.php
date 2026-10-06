@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Bga\Games\LinkoAbluxxen\States;
+namespace Bga\Games\linko\States;
 
 use Bga\GameFramework\StateType;
 use Bga\GameFramework\States\GameState;
 use Bga\GameFramework\States\PossibleAction;
 use Bga\GameFramework\UserException;
-use Bga\Games\LinkoAbluxxen\Game;
+use Bga\Games\linko\Game;
 
 class PlayerTurn extends GameState
 {
@@ -35,7 +35,7 @@ class PlayerTurn extends GameState
     {
         $selectedCards = json_decode($selectedCards, true);
         if (empty($selectedCards)) {
-            throw new UserException('You must play at least one card');
+            throw new UserException(clienttranslate('You must play at least one card'));
         }
 
         // Validate all selected cards are in player's hand
@@ -43,7 +43,7 @@ class PlayerTurn extends GameState
         $handIds = array_flip(array_column($hand, 'id'));
         foreach ($selectedCards as $card) {
             if (!isset($handIds[$card['id']])) {
-                throw new UserException('Invalid card choice');
+                throw new UserException(clienttranslate('Invalid card choice'));
             }
         }
 
@@ -51,7 +51,7 @@ class PlayerTurn extends GameState
         $nonJokers = array_filter($selectedCards, fn($c) => intval($c['type']) !== 14);
         $types     = array_unique(array_column($nonJokers, 'type'));
         if (count($types) > 1) {
-            throw new UserException('All played cards must be the same number');
+            throw new UserException(clienttranslate('All played cards must be the same number'));
         }
 
         // Place cards in the next empty row

@@ -5,9 +5,9 @@
  */
 declare(strict_types=1);
 
-namespace Bga\Games\LinkoAbluxxen;
+namespace Bga\Games\linko;
 
-use Bga\Games\LinkoAbluxxen\States\PlayerTurn;
+use Bga\Games\linko\States\PlayerTurn;
 use Bga\GameFramework\Components\Deck;
 
 class Game extends \Bga\GameFramework\Table
@@ -36,6 +36,32 @@ class Game extends \Bga\GameFramework\Table
             12 => ['card_name' => clienttranslate('12')],
             13 => ['card_name' => clienttranslate('13')],
             14 => ['card_name' => clienttranslate('X')],
+        ];
+    }
+
+    /**
+     * Never called. Lists the strings that linko.js translates with _() so that
+     * BGA's translation extraction picks them up from clienttranslate().
+     */
+    private function jsTranslatableStrings(): array
+    {
+        return [
+            clienttranslate('${count} card(s) from ${name}'),
+            clienttranslate('cards in hand'),
+            clienttranslate('${count} remaining'),
+            clienttranslate('All cards must be the same number — Clear selection'),
+            clienttranslate('Clear'),
+            clienttranslate('Discard and draw'),
+            clienttranslate('Discard'),
+            clienttranslate('Draw from deck'),
+            clienttranslate('My hand'),
+            clienttranslate('Pick up'),
+            clienttranslate('Play'),
+            clienttranslate('Pool'),
+            clienttranslate('Skip'),
+            clienttranslate('Take'),
+            clienttranslate('You'),
+            clienttranslate('cards in deck'),
         ];
     }
 

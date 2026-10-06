@@ -12,7 +12,7 @@ This is a **Board Game Arena (BGA)** implementation of the card game **Linko!** 
 
 The game follows BGA's state machine pattern with a central `Game.php` and state-specific classes:
 
-- **`modules/php/Game.php`** — Main game class (`Bga\Games\LinkoAbluxxen` namespace, extends `\Bga\GameFramework\Table`). Owns the BGA Deck component (`$this->cards`), handles game setup, and provides `getAllDatas()` for client state.
+- **`modules/php/Game.php`** — Main game class (`Bga\Games\linko` namespace, extends `\Bga\GameFramework\Table`). Owns the BGA Deck component (`$this->cards`), handles game setup, and provides `getAllDatas()` for client state.
 - **`modules/php/States/PlayerTurn.php`** — State 10 (ACTIVE_PLAYER). Validates and plays cards to the correct `playertable{i}` row, then calls `computeSnatches()` to decide the next state.
 - **`modules/php/States/ActivePlayerSnatch.php`** — State 20 (ACTIVE_PLAYER). Active player takes (`actTakeSnatch`) or skips (`actSkipSnatch`) the current snatch target.
 - **`modules/php/States/PrepareRobbed.php`** — State 25 (GAME). Switches the active player to the robbed player, then routes to state 30 or 40.

@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Bga\Games\LinkoAbluxxen\States;
+namespace Bga\Games\linko\States;
 
 use Bga\GameFramework\StateType;
 use Bga\GameFramework\States\GameState;
 use Bga\GameFramework\States\PossibleAction;
-use Bga\Games\LinkoAbluxxen\Game;
+use Bga\Games\linko\Game;
 
 /**
  * State 20 — Active player decides whether to take each snatchable stack.

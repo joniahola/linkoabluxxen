@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Bga\Games\LinkoAbluxxen\States;
+namespace Bga\Games\linko\States;
 
 use Bga\GameFramework\StateType;
 use Bga\GameFramework\States\GameState;
 use Bga\GameFramework\States\PossibleAction;
 use Bga\GameFramework\UserException;
-use Bga\Games\LinkoAbluxxen\Game;
+use Bga\Games\linko\Game;
 
 /**
  * State 40 — Robbed player draws replacement cards one at a time from the pool or deck.
@@ -41,7 +41,7 @@ class RobbedPlayerDraw extends GameState
     {
         $drawCount = intval($this->globals->get('draw_count', 0));
         if ($drawCount <= 0) {
-            throw new UserException('No cards to draw');
+            throw new UserException(clienttranslate('No cards to draw'));
         }
 
         if ($cardId === 0) {
@@ -77,7 +77,7 @@ class RobbedPlayerDraw extends GameState
             // Draw a specific card from the pool
             $pool = $this->game->cards->getCardsInLocation('pool');
             if (!isset($pool[$cardId])) {
-                throw new UserException('That card is not in the pool');
+                throw new UserException(clienttranslate('That card is not in the pool'));
             }
             $card = $pool[$cardId];
             $this->game->cards->moveCard($cardId, 'hand', $activePlayerId);
@@ -85,7 +85,7 @@ class RobbedPlayerDraw extends GameState
             $this->notify->all('cardDrawn', clienttranslate('${player_name} draws ${card_name} from the pool'), [
                 'player_id'   => $activePlayerId,
                 'player_name' => $this->game->getPlayerNameById($activePlayerId),
-                'card_name'   => $card['type'] == 14 ? 'X' : $card['type'],
+                'card_name'   => $card['type'] == 14 ? 'X' : (string)$card['type'],
                 'from_pool'   => true,
                 'card'        => $card,
             ]);

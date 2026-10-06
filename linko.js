@@ -11,7 +11,7 @@ define([
   getLibUrl("bga-animations", "1.x"),
   getLibUrl("bga-cards", "1.0.7"),
 ], function (dojo, declare, gamegui, counter, BgaAnimations, BgaCards) {
-  return declare("bgagame.linkoabluxxen", ebg.core.gamegui, {
+  return declare("bgagame.linko", ebg.core.gamegui, {
     constructor: function () {
       this.tableStocks = [];      // current player's per-row stocks
       this.othersStocks = {};     // { playerId: { tables[] } }
@@ -236,7 +236,7 @@ define([
         // Add hand counter to player panel
         this.getPlayerPanelElement(player.id).insertAdjacentHTML(
           "beforeend",
-          `<div><span id="hand-count-${pid}"></span> cards in hand</div>`
+          `<div><span id="hand-count-${pid}"></span> ${_("cards in hand")}</div>`
         );
         const ctr = new ebg.counter();
         ctr.create(`hand-count-${pid}`);
@@ -270,7 +270,7 @@ define([
       const stats = this._playerStats[playerId];
       const badge = document.getElementById(playerId + "_hand_count_badge");
       if (badge && stats) {
-        badge.textContent = `(${stats.hand} cards in hand)`;
+        badge.textContent = `(${stats.hand} ${_("cards in hand")})`;
       }
     },
 
@@ -455,7 +455,7 @@ define([
           const robbedName = args.robbed_name ?? "?";
           this.statusBar.removeActionButtons();
           this.statusBar.addActionButton(
-            `${_("Take")} (${snatch.card_count} card(s) from ${robbedName})`,
+            `${_("Take")} (${_("${count} card(s) from ${name}").replace("${count}", snatch.card_count).replace("${name}", robbedName)})`,
             () => this.bgaPerformAction("actTakeSnatch", {})
           );
           this.statusBar.addActionButton(_("Skip"), () => {
@@ -507,7 +507,7 @@ define([
 
           if (deckCount > 0 && drawCount > 0) {
             this.statusBar.addActionButton(
-              `${_("Draw from deck")} (${drawCount} remaining)`,
+              `${_("Draw from deck")} (${_("${count} remaining").replace("${count}", drawCount)})`,
               () => this.bgaPerformAction("actDrawCard", { cardId: 0 })
             );
           }

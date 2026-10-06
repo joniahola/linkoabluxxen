@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Bga\Games\LinkoAbluxxen\States;
+namespace Bga\Games\linko\States;
 
 use Bga\GameFramework\StateType;
-use Bga\Games\LinkoAbluxxen\Game;
+use Bga\Games\linko\Game;
 
 /**
  * State 45 — GAME state: replenish pool, advance to the next snatch or end the snatch phase.

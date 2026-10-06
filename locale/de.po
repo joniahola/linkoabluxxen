@@ -90,3 +90,39 @@ msgstr "${player_name} zieht ${card_name} aus dem Pool"
 
 msgid "You"
 msgstr "Du"
+
+msgid "cards in hand"
+msgstr "Karten auf der Hand"
+
+msgid "${count} card(s) from ${name}"
+msgstr "${count} Karte(n) von ${name}"
+
+msgid "${count} remaining"
+msgstr "${count} verbleibend"
+
+msgid "You must play at least one card"
+msgstr "Du musst mindestens eine Karte spielen"
+
+msgid "Invalid card choice"
+msgstr "Ungültige Kartenauswahl"
+
+msgid "All played cards must be the same number"
+msgstr "Alle gespielten Karten müssen dieselbe Zahl haben"
+
+msgid "No cards to draw"
+msgstr "Keine Karten zum Ziehen"
+
+msgid "That card is not in the pool"
+msgstr "Diese Karte befindet sich nicht im Pool"
+
+msgid "Cards stacked on table"
+msgstr "Auf den Tisch gestapelte Karten"
+
+msgid "Snatches taken"
+msgstr "Genommene Klauversuche"
+
+msgid "Snatches declined"
+msgstr "Abgelehnte Klauversuche"
+
+msgid "Cards drawn from pool"
+msgstr "Aus dem Pool gezogene Karten"

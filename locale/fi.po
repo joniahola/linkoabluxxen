@@ -90,3 +90,39 @@ msgstr "${player_name} nostaa ${card_name} poolilta"
 
 msgid "You"
 msgstr "Sinä"
+
+msgid "cards in hand"
+msgstr "korttia kädessä"
+
+msgid "${count} card(s) from ${name}"
+msgstr "${count} kortti(a) pelaajalta ${name}"
+
+msgid "${count} remaining"
+msgstr "${count} jäljellä"
+
+msgid "You must play at least one card"
+msgstr "Sinun täytyy pelata vähintään yksi kortti"
+
+msgid "Invalid card choice"
+msgstr "Virheellinen korttivalinta"
+
+msgid "All played cards must be the same number"
+msgstr "Kaikkien pelattujen korttien täytyy olla samaa numeroa"
+
+msgid "No cards to draw"
+msgstr "Ei nostettavia kortteja"
+
+msgid "That card is not in the pool"
+msgstr "Tuo kortti ei ole poolissa"
+
+msgid "Cards stacked on table"
+msgstr "Pöydälle pinotut kortit"
+
+msgid "Snatches taken"
+msgstr "Napatut kortit (otettu)"
+
+msgid "Snatches declined"
+msgstr "Ohitetut napit"
+
+msgid "Cards drawn from pool"
+msgstr "Poolista nostetut kortit"
