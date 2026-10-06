@@ -47,7 +47,7 @@ class Game extends \Bga\GameFramework\Table
     {
         return [
             clienttranslate('${count} card(s) from ${name}'),
-            clienttranslate('cards in hand'),
+            clienttranslate('${count} cards in hand'),
             clienttranslate('${count} remaining'),
             clienttranslate('All cards must be the same number — Clear selection'),
             clienttranslate('Clear'),

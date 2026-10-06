@@ -91,8 +91,8 @@ msgstr "${player_name} zieht ${card_name} aus dem Pool"
 msgid "You"
 msgstr "Du"
 
-msgid "cards in hand"
-msgstr "Karten auf der Hand"
+msgid "${count} cards in hand"
+msgstr "${count} Karten auf der Hand"
 
 msgid "${count} card(s) from ${name}"
 msgstr "${count} Karte(n) von ${name}"

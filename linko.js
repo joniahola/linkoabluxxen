@@ -236,7 +236,7 @@ define([
         // Add hand counter to player panel
         this.getPlayerPanelElement(player.id).insertAdjacentHTML(
           "beforeend",
-          `<div><span id="hand-count-${pid}"></span> ${_("cards in hand")}</div>`
+          `<div>${_("${count} cards in hand").replace("${count}", `<span id="hand-count-${pid}"></span>`)}</div>`
         );
         const ctr = new ebg.counter();
         ctr.create(`hand-count-${pid}`);
@@ -270,7 +270,7 @@ define([
       const stats = this._playerStats[playerId];
       const badge = document.getElementById(playerId + "_hand_count_badge");
       if (badge && stats) {
-        badge.textContent = `(${stats.hand} ${_("cards in hand")})`;
+        badge.textContent = `(${_("${count} cards in hand").replace("${count}", stats.hand)})`;
       }
     },
 
