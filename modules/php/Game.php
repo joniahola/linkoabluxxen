@@ -46,9 +46,9 @@ class Game extends \Bga\GameFramework\Table
     private function jsTranslatableStrings(): array
     {
         return [
-            clienttranslate('${count} card(s) from ${name}'),
-            clienttranslate('${count} cards in hand'),
-            clienttranslate('${count} remaining'),
+            clienttranslate('card(s) from'),
+            clienttranslate('cards in hand'),
+            clienttranslate('remaining'),
             clienttranslate('All cards must be the same number — Clear selection'),
             clienttranslate('Clear'),
             clienttranslate('Discard and draw'),

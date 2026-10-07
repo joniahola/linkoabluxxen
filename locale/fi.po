@@ -91,14 +91,14 @@ msgstr "${player_name} nostaa ${card_name} poolilta"
 msgid "You"
 msgstr "Sinä"
 
-msgid "${count} cards in hand"
-msgstr "${count} korttia kädessä"
+msgid "cards in hand"
+msgstr "korttia kädessä"
 
-msgid "${count} card(s) from ${name}"
-msgstr "${count} kortti(a) pelaajalta ${name}"
+msgid "card(s) from"
+msgstr "kortti(a) pelaajalta"
 
-msgid "${count} remaining"
-msgstr "${count} jäljellä"
+msgid "remaining"
+msgstr "jäljellä"
 
 msgid "You must play at least one card"
 msgstr "Sinun täytyy pelata vähintään yksi kortti"

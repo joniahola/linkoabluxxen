@@ -91,14 +91,14 @@ msgstr "${player_name} zieht ${card_name} aus dem Pool"
 msgid "You"
 msgstr "Du"
 
-msgid "${count} cards in hand"
-msgstr "${count} Karten auf der Hand"
+msgid "cards in hand"
+msgstr "Karten auf der Hand"
 
-msgid "${count} card(s) from ${name}"
-msgstr "${count} Karte(n) von ${name}"
+msgid "card(s) from"
+msgstr "Karte(n) von"
 
-msgid "${count} remaining"
-msgstr "${count} verbleibend"
+msgid "remaining"
+msgstr "verbleibend"
 
 msgid "You must play at least one card"
 msgstr "Du musst mindestens eine Karte spielen"

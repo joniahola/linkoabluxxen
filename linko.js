@@ -236,7 +236,7 @@ define([
         // Add hand counter to player panel
         this.getPlayerPanelElement(player.id).insertAdjacentHTML(
           "beforeend",
-          `<div>${_("${count} cards in hand").replace("${count}", `<span id="hand-count-${pid}"></span>`)}</div>`
+          `<div><span id="hand-count-${pid}"></span> ${_("cards in hand")}</div>`
         );
         const ctr = new ebg.counter();
         ctr.create(`hand-count-${pid}`);
@@ -270,7 +270,7 @@ define([
       const stats = this._playerStats[playerId];
       const badge = document.getElementById(playerId + "_hand_count_badge");
       if (badge && stats) {
-        badge.textContent = `(${_("${count} cards in hand").replace("${count}", stats.hand)})`;
+        badge.textContent = `(${stats.hand} ${_("cards in hand")})`;
       }
     },
 
@@ -455,7 +455,7 @@ define([
           const robbedName = args.robbed_name ?? "?";
           this.statusBar.removeActionButtons();
           this.statusBar.addActionButton(
-            `${_("Take")} (${_("${count} card(s) from ${name}").replace("${count}", snatch.card_count).replace("${name}", robbedName)})`,
+            `${_("Take")} (${snatch.card_count} ${_("card(s) from")} ${robbedName})`,
             () => this.bgaPerformAction("actTakeSnatch", {})
           );
           this.statusBar.addActionButton(_("Skip"), () => {
@@ -507,7 +507,7 @@ define([
 
           if (deckCount > 0 && drawCount > 0) {
             this.statusBar.addActionButton(
-              `${_("Draw from deck")} (${_("${count} remaining").replace("${count}", drawCount)})`,
+              `${_("Draw from deck")} (${drawCount} ${_("remaining")})`,
               () => this.bgaPerformAction("actDrawCard", { cardId: 0 })
             );
           }
